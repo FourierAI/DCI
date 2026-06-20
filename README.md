@@ -5,6 +5,7 @@
 ### A Training-Free Test-Time Scaling Strategy for Large-Scale Visual Recognition with MLLMs
 
 [![Paper status](https://img.shields.io/badge/Paper-Under%20Review-b31b1b?style=for-the-badge)](#paper)
+[![Project Page](https://img.shields.io/badge/Project-Page-52e7d1?style=for-the-badge)](https://fourierai.github.io/DCI/)
 [![Training Free](https://img.shields.io/badge/Training-Free-2ea44f?style=for-the-badge)](#why-dci)
 [![Model Agnostic](https://img.shields.io/badge/Model-Agnostic-6f42c1?style=for-the-badge)](#why-dci)
 [![Plug and Play](https://img.shields.io/badge/Plug--and--Play-0969da?style=for-the-badge)](#why-dci)

@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07111f">
+  <meta name="description" content="Divide-and-Conquer Inference: a training-free test-time scaling strategy for large-scale visual recognition with multimodal large language models.">
+  <meta property="og:title" content="Divide-and-Conquer Inference">
+  <meta property="og:description" content="Divide the search space. Preserve the signal. Scale visual recognition.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="assets/dci-framework.png">
+  <title>DCI — Divide-and-Conquer Inference</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="DCI home">
+      <svg viewBox="0 0 40 40" aria-hidden="true">
+        <path d="M8 8h9v9H8zM23 8h9v9h-9zM8 23h9v9H8zM23 23h9v9h-9z"/>
+        <path class="brand-cut" d="M17 12h6M12 17v6M28 17v6M17 28h6"/>
+      </svg>
+      <span>DCI</span>
+    </a>
+    <button class="menu-button" type="button" aria-expanded="false" aria-controls="main-nav">
+      <span></span><span></span>
+      <span class="sr-only">Toggle navigation</span>
+    </button>
+    <nav id="main-nav" aria-label="Primary navigation">
+      <a href="#method">Method</a>
+      <a href="#results">Results</a>
+      <a href="#abstract">Abstract</a>
+      <a href="#citation">Citation</a>
+      <a class="nav-cta" href="https://github.com/FourierAI/DCI">View code ↗</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="hero-glow" aria-hidden="true"></div>
+      <div class="hero-copy reveal">
+        <div class="eyebrow"><span></span> Manuscript under review · 2026</div>
+        <h1>Divide-and-<br><em>Conquer</em> Inference</h1>
+        <p class="hero-subtitle">A training-free test-time scaling strategy for large-scale visual recognition with multimodal large language models.</p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="https://github.com/FourierAI/DCI">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .7a11.5 11.5 0 0 0-3.64 22.4c.58.1.79-.25.79-.56v-2.23c-3.22.7-3.9-1.37-3.9-1.37-.52-1.34-1.28-1.7-1.28-1.7-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.57-.29-5.27-1.28-5.27-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.16 1.18A10.9 10.9 0 0 1 12 6.11c.98 0 1.95.13 2.87.39 2.2-1.49 3.16-1.18 3.16-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.41-2.71 5.38-5.29 5.67.42.36.79 1.06.79 2.14v3.18c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .7Z"/></svg>
+            Code
+          </a>
+          <a class="button button-secondary" href="#method">Explore the method ↓</a>
+        </div>
+        <div class="hero-meta">
+          <span>Training-free</span>
+          <span>Model-agnostic</span>
+          <span>Plug-and-play</span>
+        </div>
+      </div>
+
+      <div class="hero-visual reveal" aria-label="DCI recursively divides a large label space into smaller sub-problems">
+        <div class="visual-label">21,843 candidate classes</div>
+        <div class="tree-stage stage-root">
+          <div class="node root-node">
+            <span class="node-noise"></span>
+            <b>Global search</b>
+            <small>Low signal-to-noise ratio</small>
+          </div>
+        </div>
+        <div class="connector connector-one" aria-hidden="true"></div>
+        <div class="tree-stage stage-groups">
+          <div class="node group-node">G<sub>1</sub></div>
+          <div class="node group-node active">G<sub>2</sub></div>
+          <div class="node group-node">G<sub>3</sub></div>
+          <div class="node group-node muted">G<sub>4</sub></div>
+        </div>
+        <div class="connector connector-two" aria-hidden="true"></div>
+        <div class="tree-stage stage-prune">
+          <div class="node prune-node muted">None</div>
+          <div class="node prune-node active">survivor</div>
+          <div class="node prune-node muted">None</div>
+        </div>
+        <div class="connector connector-three" aria-hidden="true"></div>
+        <div class="tree-stage stage-result">
+          <div class="node result-node">
+            <span>✓</span>
+            <div><b>Prediction</b><small>High local SNR</small></div>
+          </div>
+        </div>
+        <div class="visual-caption"><span>DCI</span> recursively divides, conquers, and prunes.</div>
+      </div>
+    </section>
+
+    <section class="authors strip reveal" aria-label="Authors">
+      <p>Zhipeng Ye</p><i>·</i><p>Jiaqi Huang</p><i>·</i><p>Feng Jiang</p><i>·</i><p>Qiufeng Wang</p><i>·</i><p>Yikang Duan</p><i>·</i><p>Dawei Wang</p><i>·</i><p>Xihang Zhou</p><i>·</i><p>Qian Qiao</p>
+    </section>
+
+    <section class="problem section">
+      <div class="section-intro reveal">
+        <div class="kicker">The problem</div>
+        <h2>More labels.<br><span>Less signal.</span></h2>
+        <p>MLLM recognition accuracy can collapse as the candidate label space expands. We call this <strong>Performance Collapse in Long Sequence Recognition</strong>.</p>
+      </div>
+      <div class="problem-grid">
+        <article class="problem-card reveal">
+          <span class="card-index">01</span>
+          <div class="mini-chart entropy"><i></i><i></i><i></i><i></i><i></i></div>
+          <h3>Entropy escalates</h3>
+          <p>Every added candidate increases uncertainty and makes the global decision harder.</p>
+        </article>
+        <article class="problem-card reveal">
+          <span class="card-index">02</span>
+          <div class="attention-rings"><i></i><i></i><i></i><b></b></div>
+          <h3>Attention dilutes</h3>
+          <p>Relevant visual-label interactions receive progressively weaker attention weights.</p>
+        </article>
+        <article class="problem-card reveal">
+          <span class="card-index">03</span>
+          <div class="mini-chart snr"><i></i><i></i><i></i><i></i><i></i></div>
+          <h3>SNR decays</h3>
+          <p>The correct category becomes harder to recover from increasingly noisy contexts.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="method" class="method section">
+      <div class="section-heading reveal">
+        <div>
+          <div class="kicker">Our approach</div>
+          <h2>Think locally.<br><span>Scale globally.</span></h2>
+        </div>
+        <p>DCI replaces one difficult global classification with a sequence of smaller local decisions—without training, fine-tuning, or architectural modification.</p>
+      </div>
+      <figure class="paper-figure reveal">
+        <img src="assets/dci-framework.png" alt="Overview of the Divide-and-Conquer Inference framework" loading="lazy">
+        <figcaption><span>Figure 1</span> DCI recursively partitions the candidate space, solves local sub-problems in parallel, and prunes unlikely branches.</figcaption>
+      </figure>
+      <div class="steps">
+        <article class="step reveal"><b>01</b><h3>Divide</h3><p>Partition the candidate set into compact groups of size <i>K</i>.</p></article>
+        <article class="step reveal"><b>02</b><h3>Conquer</h3><p>Ask the same MLLM to solve independent local recognition tasks.</p></article>
+        <article class="step reveal"><b>03</b><h3>Prune</h3><p>Discard rejected branches and retain only plausible candidates.</p></article>
+        <article class="step reveal"><b>04</b><h3>Refine</h3><p>Repeat until the search converges to one final prediction.</p></article>
+      </div>
+      <figure class="paper-figure compact reveal">
+        <img src="assets/conquer-prompt.png" alt="Structured prompting used during the conquer phase" loading="lazy">
+        <figcaption><span>Figure 2</span> Structured conquer-phase prompting enforces exact, consistent local decisions.</figcaption>
+      </figure>
+    </section>
+
+    <section id="results" class="results section">
+      <div class="section-heading inverse reveal">
+        <div>
+          <div class="kicker">Experiments</div>
+          <h2>Collapse,<br><span>mitigated.</span></h2>
+        </div>
+        <p>Across diverse open- and closed-source MLLMs, DCI consistently improves recognition as the label space grows.</p>
+      </div>
+      <div class="metric-grid">
+        <article class="metric featured reveal"><small>DeepSeek-VL-7B</small><strong>+19.0<sup>pp</sup></strong><p>at 1,000 candidate classes</p></article>
+        <article class="metric reveal"><small>Qwen3-VL-2B</small><strong>+10.8<sup>pp</sup></strong></article>
+        <article class="metric reveal"><small>Qwen2.5-VL-7B</small><strong>+9.8<sup>pp</sup></strong></article>
+        <article class="metric reveal"><small>Models evaluated</small><strong>6</strong><p>consistent improvements</p></article>
+      </div>
+      <figure class="paper-figure dark reveal">
+        <img src="assets/scaling-results.png" alt="Scaling results across multiple multimodal large language models" loading="lazy">
+        <figcaption><span>Figure 3</span> DCI mitigates accuracy degradation as the candidate space expands.</figcaption>
+      </figure>
+      <div class="complexity-grid">
+        <div class="complexity-copy reveal">
+          <div class="kicker">Efficient scaling</div>
+          <h3>Control context length.<br>Compress the search.</h3>
+          <p>Flat inference inherits the quadratic cost of self-attention over a long candidate sequence. DCI controls local sequence length and progressively reduces the active search space through pruning.</p>
+          <ul>
+            <li><span></span> Parallel local inference</li>
+            <li><span></span> Dynamic candidate pruning</li>
+            <li><span></span> Favorable large-label scaling</li>
+          </ul>
+        </div>
+        <figure class="paper-figure dark reveal">
+          <img src="assets/complexity-analysis.png" alt="Computational complexity and scalability analysis" loading="lazy">
+          <figcaption><span>Figure 4</span> Complexity and scalability analysis.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section id="abstract" class="abstract section">
+      <div class="abstract-number reveal">DCI</div>
+      <div class="abstract-copy reveal">
+        <div class="kicker">Abstract</div>
+        <h2>Divide the search space.<br><span>Preserve the signal.</span></h2>
+        <p>Multimodal Large Language Models have demonstrated strong capabilities across a wide range of vision-language tasks. However, when applied to large-scale image classification, their performance degrades significantly as the label space expands—a phenomenon we define as Performance Collapse in Long Sequence Recognition.</p>
+        <p>Through an information-theoretic analysis, we reveal that this collapse stems from a fundamental conflict between escalating information entropy and attention dilution and decay. To mitigate this, we propose Divide-and-Conquer Inference, a training-free strategy that recursively decomposes complex global classification into simpler localized sub-problems and dynamically prunes the search space.</p>
+        <p>Extensive experiments on ImageNet-1K and ImageNet-21K demonstrate consistent accuracy improvements, enabling lightweight open-source models to rival or surpass much larger frontier models without additional training or fine-tuning.</p>
+      </div>
+    </section>
+
+    <section class="quickstart section">
+      <div class="section-heading reveal">
+        <div>
+          <div class="kicker">Open source</div>
+          <h2>Try DCI in<br><span>three commands.</span></h2>
+        </div>
+        <p>A unified, dataset-agnostic implementation for any multimodal model served through an OpenAI-compatible API.</p>
+      </div>
+      <div class="terminal reveal">
+        <div class="terminal-bar"><i></i><i></i><i></i><span>quickstart.sh</span></div>
+        <pre><code><span class="comment"># Install DCI</span>
+<span class="command">git clone</span> https://github.com/FourierAI/DCI.git
+<span class="command">cd</span> DCI && <span class="command">pip install</span> -e .
+
+<span class="comment"># Run divide-and-conquer inference</span>
+<span class="command">dci-eval</span> \
+  --dataset imagenet1k \
+  --model Qwen/Qwen3-VL-2B-Instruct \
+  --image-root /path/to/imagenet/val \
+  --k-values 100 50 20 10</code></pre>
+      </div>
+    </section>
+
+    <section id="citation" class="citation section">
+      <div class="citation-copy reveal">
+        <div class="kicker">Citation</div>
+        <h2>Build on<br><span>our work.</span></h2>
+        <p>If DCI helps your research, please cite the manuscript and star the repository.</p>
+        <a class="button button-primary" href="https://github.com/FourierAI/DCI">Star on GitHub ↗</a>
+      </div>
+      <div class="bibtex reveal">
+        <button class="copy-button" type="button" aria-label="Copy BibTeX">Copy</button>
+        <pre><code>@misc{ye2026dci,
+  title  = {Divide-and-Conquer Inference for
+            Large-Scale Visual Recognition with
+            Multimodal Large Language Models},
+  author = {Zhipeng Ye and Jiaqi Huang and Feng Jiang
+            and Qiufeng Wang and Yikang Duan and Dawei Wang
+            and Xihang Zhou and Qian Qiao},
+  year   = {2026},
+  note   = {Manuscript under review}
+}</code></pre>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <a class="brand footer-brand" href="#top"><span>DCI</span></a>
+    <p>Divide the search space. Preserve the signal. Scale visual recognition.</p>
+    <div><a href="https://github.com/FourierAI/DCI">GitHub</a><a href="#citation">Citation</a><a href="https://github.com/FourierAI/DCI/issues">Issues</a></div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
