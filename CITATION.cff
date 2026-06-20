@@ -1,0 +1,46 @@
+cff-version: 1.2.0
+message: "If you use DCI in your research, please cite this software and manuscript."
+title: "Divide-and-Conquer Inference"
+type: software
+version: 0.1.0
+date-released: 2026-06-21
+repository-code: "https://github.com/FourierAI/DCI"
+license: MIT
+authors:
+  - family-names: Ye
+    given-names: Zhipeng
+  - family-names: Huang
+    given-names: Jiaqi
+  - family-names: Jiang
+    given-names: Feng
+  - family-names: Wang
+    given-names: Qiufeng
+  - family-names: Duan
+    given-names: Yikang
+  - family-names: Wang
+    given-names: Dawei
+  - family-names: Zhou
+    given-names: Xihang
+  - family-names: Qiao
+    given-names: Qian
+preferred-citation:
+  type: generic
+  title: "Divide-and-Conquer Inference for Large-Scale Visual Recognition with Multimodal Large Language Models"
+  year: 2026
+  authors:
+    - family-names: Ye
+      given-names: Zhipeng
+    - family-names: Huang
+      given-names: Jiaqi
+    - family-names: Jiang
+      given-names: Feng
+    - family-names: Wang
+      given-names: Qiufeng
+    - family-names: Duan
+      given-names: Yikang
+    - family-names: Wang
+      given-names: Dawei
+    - family-names: Zhou
+      given-names: Xihang
+    - family-names: Qiao
+      given-names: Qian

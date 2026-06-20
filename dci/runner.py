@@ -3,11 +3,17 @@ from __future__ import annotations
 import argparse
 import base64
 import json
+import mimetypes
 import os
+import platform
 import random
+import subprocess
+import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 from openai import OpenAI
 from tqdm import tqdm
@@ -16,10 +22,8 @@ from .configs import DATASETS, DatasetConfig, resolve_path
 
 
 PROMPT = """Please directly identify the category name of the image from the
-candidate category name list. Always choose the most likely category from the
-list whenever possible, and only output 'None' if the image clearly does not
-belong to any category in the list. Do not output sentences or explanations;
-output only one category name exactly as listed (respect case and
+candidate category name list. {decision_rule} Do not output sentences or
+explanations; output only one category name exactly as listed (respect case and
 singular/plural form).
 
 Example:
@@ -54,6 +58,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", default="outputs")
     parser.add_argument("--baseline", action="store_true", help="Use one flat prompt.")
     parser.add_argument("--timeout", type=float, default=3600)
+    parser.add_argument(
+        "--max-retries",
+        type=int,
+        default=5,
+        help="Maximum retries for transient API failures.",
+    )
     parser.add_argument("--max-tokens", type=int, default=64)
     return parser.parse_args()
 
@@ -127,17 +137,24 @@ class DCIClassifier:
 
     @staticmethod
     def encode_image(image_path: Path) -> str:
+        mime_type = mimetypes.guess_type(image_path.name)[0] or "application/octet-stream"
         with image_path.open("rb") as handle:
-            return base64.b64encode(handle.read()).decode("utf-8")
+            encoded = base64.b64encode(handle.read()).decode("utf-8")
+        return f"data:{mime_type};base64,{encoded}"
 
-    def query(self, image_path: Path, labels: list[str], allow_none: bool) -> str:
-        prompt = PROMPT.format(count=len(labels), labels=", ".join(labels))
-        if not allow_none:
-            prompt = prompt.replace(
-                "Always choose the most likely category from the\nlist whenever possible, and only output 'None' if the image clearly does not\nbelong to any category in the list.",
-                "Always choose the most likely category from the list.",
-            )
-        image = self.encode_image(image_path)
+    def query(self, image_data_url: str, labels: list[str], allow_none: bool) -> str:
+        decision_rule = (
+            "Always choose the most likely category from the list whenever possible, "
+            "and only output 'None' if the image clearly does not belong to any "
+            "category in the list."
+            if allow_none
+            else "Always choose the most likely category from the list."
+        )
+        prompt = PROMPT.format(
+            decision_rule=decision_rule,
+            count=len(labels),
+            labels=", ".join(labels),
+        )
         response = self.client.chat.completions.create(
             model=self.model,
             messages=[
@@ -146,7 +163,7 @@ class DCIClassifier:
                     "content": [
                         {
                             "type": "image_url",
-                            "image_url": {"url": f"data:image/jpeg;base64,{image}"},
+                            "image_url": {"url": image_data_url},
                         },
                         {"type": "text", "text": prompt},
                     ],
@@ -169,13 +186,16 @@ class DCIClassifier:
         return exact.get(cleaned.casefold())
 
     def classify(self, image_path: Path, labels: list[str], k: int) -> str:
+        image_data_url = self.encode_image(image_path)
         active = labels[:]
         while len(active) > k:
             groups = self.groups(active, k)
             with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
                 raw = list(
                     executor.map(
-                        lambda group: self.query(image_path, group, allow_none=True),
+                        lambda group: self.query(
+                            image_data_url, group, allow_none=True
+                        ),
                         groups,
                     )
                 )
@@ -186,18 +206,78 @@ class DCIClassifier:
             ]
             if not survivors:
                 # A forced global decision guarantees progress if every branch rejects.
-                return self.query(image_path, active, allow_none=False)
+                return self.query(image_data_url, active, allow_none=False)
             active = list(dict.fromkeys(survivors))
 
-        prediction = self.query(image_path, active, allow_none=False)
+        prediction = self.query(image_data_url, active, allow_none=False)
         return self.normalize_prediction(prediction, active) or prediction
 
 
-def evaluate(path: Path, elapsed: float) -> None:
+def read_completed(path: Path) -> set[str]:
+    completed: set[str] = set()
+    if not path.exists():
+        return completed
+    with path.open(encoding="utf-8") as handle:
+        for line_number, line in enumerate(handle, start=1):
+            if not line.strip():
+                continue
+            try:
+                completed.add(json.loads(line)["image"])
+            except (json.JSONDecodeError, KeyError, TypeError) as exc:
+                print(
+                    f"Warning: ignoring malformed record at {path}:{line_number}: {exc}",
+                    file=sys.stderr,
+                )
+    return completed
+
+
+def git_revision(repo_root: Path) -> str | None:
+    try:
+        return subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=repo_root,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        return None
+
+
+def write_manifest(
+    path: Path,
+    args: argparse.Namespace,
+    repo_root: Path,
+    *,
+    k: int,
+    mode: str,
+    num_images: int,
+    num_labels: int,
+) -> None:
+    arguments = vars(args).copy()
+    arguments.pop("api_key", None)
+    payload: dict[str, Any] = {
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "git_revision": git_revision(repo_root),
+        "python": sys.version,
+        "platform": platform.platform(),
+        "mode": mode,
+        "k": k,
+        "num_images": num_images,
+        "num_labels": num_labels,
+        "arguments": arguments,
+    }
+    path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+
+def evaluate(path: Path, elapsed: float, new_samples: int) -> None:
     total = correct = 0
     with path.open(encoding="utf-8") as handle:
         for line in handle:
-            row = json.loads(line)
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                continue
             total += 1
             correct += row["prediction"] == row["target"]
     accuracy = 100 * correct / total if total else 0.0
@@ -205,8 +285,9 @@ def evaluate(path: Path, elapsed: float) -> None:
         f"Total samples: {total}\n"
         f"Correct predictions: {correct}\n"
         f"Accuracy: {accuracy:.2f}%\n"
-        f"Elapsed time: {elapsed:.2f}s\n"
-        f"Time per image: {elapsed / total if total else 0:.2f}s\n"
+        f"New samples this run: {new_samples}\n"
+        f"Elapsed time this run: {elapsed:.2f}s\n"
+        f"Time per new image: {elapsed / new_samples if new_samples else 0:.2f}s\n"
     )
     path.with_suffix(".txt").write_text(report, encoding="utf-8")
     print(report)
@@ -225,7 +306,12 @@ def main() -> None:
             f"Image root not found: {image_root}. See README.md for dataset setup."
         )
 
-    client = OpenAI(api_key=args.api_key, base_url=args.api_base, timeout=args.timeout)
+    client = OpenAI(
+        api_key=args.api_key,
+        base_url=args.api_base,
+        timeout=args.timeout,
+        max_retries=args.max_retries,
+    )
     classifier = DCIClassifier(client, args.model, args.max_workers, args.max_tokens)
     rng = random.Random(args.seed)
     images = sample_images(
@@ -243,16 +329,23 @@ def main() -> None:
     for k in k_values:
         mode = "baseline" if args.baseline else f"k-{k}"
         output_path = output_root / f"{mode}.jsonl"
-        completed: set[str] = set()
-        if output_path.exists():
-            with output_path.open(encoding="utf-8") as handle:
-                completed = {json.loads(line)["image"] for line in handle}
-
+        completed = read_completed(output_path)
         pending = [image for image in images if image not in completed]
+        write_manifest(
+            output_root / f"{mode}.manifest.json",
+            args,
+            repo_root,
+            k=k,
+            mode=mode,
+            num_images=len(images),
+            num_labels=len(labels),
+        )
         start = time.perf_counter()
         with output_path.open("a", encoding="utf-8") as handle:
             for image in tqdm(pending, desc=f"{args.dataset} / {mode}"):
                 image_path = image_root / image
+                if not image_path.is_file():
+                    raise FileNotFoundError(f"Image not found: {image_path}")
                 prediction = classifier.classify(image_path, labels, k)
                 handle.write(
                     json.dumps(
@@ -267,7 +360,7 @@ def main() -> None:
                     + "\n"
                 )
                 handle.flush()
-        evaluate(output_path, time.perf_counter() - start)
+        evaluate(output_path, time.perf_counter() - start, len(pending))
 
 
 if __name__ == "__main__":

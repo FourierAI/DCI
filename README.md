@@ -4,18 +4,23 @@
 
 ### A Training-Free Test-Time Scaling Strategy for Large-Scale Visual Recognition with MLLMs
 
-[![Paper](https://img.shields.io/badge/Paper-Pattern%20Recognition-b31b1b?style=for-the-badge)](#paper)
+[![Paper status](https://img.shields.io/badge/Paper-Under%20Review-b31b1b?style=for-the-badge)](#paper)
 [![Training Free](https://img.shields.io/badge/Training-Free-2ea44f?style=for-the-badge)](#why-dci)
 [![Model Agnostic](https://img.shields.io/badge/Model-Agnostic-6f42c1?style=for-the-badge)](#why-dci)
 [![Plug and Play](https://img.shields.io/badge/Plug--and--Play-0969da?style=for-the-badge)](#why-dci)
+
+[![CI](https://github.com/FourierAI/DCI/actions/workflows/ci.yml/badge.svg)](https://github.com/FourierAI/DCI/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/Python-3.9%2B-3776ab?logo=python&logoColor=white)](https://www.python.org/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 **Zhipeng Ye · Jiaqi Huang · Feng Jiang · Qiufeng Wang · Yikang Duan · Dawei Wang · Xihang Zhou · Qian Qiao**
 
 <p>
   <a href="#overview">Overview</a> ·
   <a href="#method">Method</a> ·
-  <a href="#code">Code</a> ·
+  <a href="#quick-start">Quick Start</a> ·
   <a href="#results">Results</a> ·
+  <a href="#reproducibility">Reproducibility</a> ·
   <a href="#paper">Paper</a> ·
   <a href="#citation">Citation</a>
 </p>
@@ -73,7 +78,7 @@ A shared structured prompt enforces consistent decisions across sub-problems. It
 | **Parallelizable** | Independent candidate groups can be processed concurrently. |
 | **Efficient** | DCI avoids the prohibitive scaling behavior of flat long-sequence inference. |
 
-## Code
+## Quick Start
 
 This repository provides a unified, dataset-agnostic implementation of DCI for any multimodal model served through an **OpenAI-compatible API**. The runner supports recursive candidate pruning, parallel conquer calls, resumable evaluation, deterministic sampling, flat-prompt baselines, and per-run accuracy reports.
 
@@ -85,10 +90,11 @@ cd DCI
 
 python -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -e .
 ```
 
-Python 3.9 or later is recommended.
+Python 3.9 or later is required. For development and testing, use
+`pip install -e ".[dev]"`.
 
 ### Serve an MLLM
 
@@ -119,7 +125,7 @@ ImageNet-21K experiments evaluate ImageNet-1K images against the expanded 21K ca
 ### Run DCI
 
 ```bash
-python -m dci.runner \
+dci-eval \
   --dataset imagenet1k \
   --model Qwen/Qwen3-VL-2B-Instruct \
   --image-root /path/to/imagenet/val \
@@ -130,7 +136,7 @@ python -m dci.runner \
 For a quick smoke test:
 
 ```bash
-python -m dci.runner \
+dci-eval \
   --dataset cifar100 \
   --model Qwen/Qwen3-VL-2B-Instruct \
   --image-root /path/to/cifar100_test_images \
@@ -141,7 +147,7 @@ python -m dci.runner \
 Run the conventional flat-prompt baseline:
 
 ```bash
-python -m dci.runner \
+dci-eval \
   --dataset imagenet1k \
   --model Qwen/Qwen3-VL-2B-Instruct \
   --image-root /path/to/imagenet/val \
@@ -153,9 +159,12 @@ Results are written to:
 ```text
 outputs/<dataset>/<model>/k-<K>.jsonl
 outputs/<dataset>/<model>/k-<K>.txt
+outputs/<dataset>/<model>/k-<K>.manifest.json
 ```
 
 Existing JSONL records are detected automatically, so interrupted evaluations can be resumed with the same command.
+Each manifest records the command arguments, model, K value, platform, Python
+version, timestamp, and Git revision. API keys are never written to disk.
 
 ### Key options
 
@@ -167,6 +176,7 @@ Existing JSONL records are detected automatically, so interrupted evaluations ca
 | `--image-root` | Local root containing dataset images. |
 | `--k-values` | Candidate group sizes to evaluate. |
 | `--max-workers` | Maximum parallel conquer calls. |
+| `--max-retries` | Retries for transient API failures; defaults to 5. |
 | `--max-samples` | Optional cap for fast experiments. |
 | `--samples-per-class` | Optional class-balanced sampling. |
 | `--baseline` | Disable decomposition and use one flat candidate prompt. |
@@ -175,13 +185,18 @@ Existing JSONL records are detected automatically, so interrupted evaluations ca
 
 ```text
 DCI/
+├── .github/workflows/      # Continuous integration
 ├── dci/
 │   ├── configs.py          # Dataset registry and default K values
 │   └── runner.py           # Unified DCI evaluation CLI
 ├── data/
+│   ├── README.md           # Dataset sources and setup
 │   └── metadata/           # Evaluation splits and class vocabularies
+├── tests/                  # Unit tests for core inference utilities
 ├── assets/figures/         # Paper figures used in this README
-├── requirements.txt
+├── CITATION.cff
+├── LICENSE
+├── pyproject.toml
 └── README.md
 ```
 
@@ -214,6 +229,30 @@ These results show that test-time decomposition can allow lightweight open-sourc
 
 Flat inference processes the entire candidate space in one long context and inherits the quadratic cost of self-attention. DCI instead controls local sequence length through grouping and progressively reduces the active search space through pruning, yielding substantially more favorable scaling behavior in large-label regimes.
 
+## Reproducibility
+
+The repository is designed to make every run auditable:
+
+- Dataset splits and candidate vocabularies are versioned under `data/metadata/`.
+- Sampling is deterministic for a fixed `--seed`.
+- Interrupted JSONL evaluations resume without recomputing completed images.
+- Every run writes a manifest with its environment and Git revision.
+- CI validates grouping, normalization, sampling, image encoding, and resume logic
+  on Python 3.9 and 3.12.
+
+For a controlled comparison, run the baseline and DCI with the same dataset,
+model endpoint, image root, seed, and sample selection:
+
+```bash
+dci-eval --dataset imagenet1k --model MODEL --image-root IMAGE_ROOT --baseline
+dci-eval --dataset imagenet1k --model MODEL --image-root IMAGE_ROOT --k-values 100
+```
+
+Model serving implementations may differ in image preprocessing, chat templates,
+and decoding defaults. Record the exact serving framework, model revision, GPU,
+and framework version when reporting results. Dataset download sources and
+licensing notes are documented in [`data/README.md`](data/README.md).
+
 ## Abstract
 
 Multimodal Large Language Models (MLLMs) have demonstrated strong capabilities across a wide range of vision-language tasks. However, when applied to large-scale image classification, their performance degrades significantly as the label space expands—a phenomenon we define as Performance Collapse in Long Sequence Recognition. Through an information-theoretic analysis, we reveal that this collapse stems from a fundamental conflict between escalating information entropy and attention dilution and decay, which impairs the model's ability to maintain a sufficient signal-to-noise ratio when processing extremely long prompts.
@@ -231,14 +270,21 @@ The manuscript is currently under review. The accompanying experimental code and
 If you find DCI useful in your research, please consider citing our work:
 
 ```bibtex
-@article{ye2026dci,
-  title   = {Divide-and-Conquer Inference for Large-Scale Visual Recognition with Multimodal Large Language Models},
-  author  = {Ye, Zhipeng and Huang, Jiaqi and Jiang, Feng and Wang, Qiufeng and Duan, Yikang and Wang, Dawei and Zhou, Xihang and Qiao, Qian},
-  journal = {Pattern Recognition},
-  year    = {2026},
-  note    = {Manuscript under review}
+@misc{ye2026dci,
+  title  = {Divide-and-Conquer Inference for Large-Scale Visual Recognition with Multimodal Large Language Models},
+  author = {Ye, Zhipeng and Huang, Jiaqi and Jiang, Feng and Wang, Qiufeng and Duan, Yikang and Wang, Dawei and Zhou, Xihang and Qiao, Qian},
+  year   = {2026},
+  note   = {Manuscript under review; source code available at \url{https://github.com/FourierAI/DCI}}
 }
 ```
+
+GitHub also provides citation metadata directly from
+[`CITATION.cff`](CITATION.cff).
+
+## License
+
+The code is released under the [MIT License](LICENSE). Dataset images are
+governed by their respective licenses and are not redistributed.
 
 ## Acknowledgements
 
