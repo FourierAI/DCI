@@ -1,44 +1,36 @@
-const menuButton = document.querySelector(".menu-button");
-const navigation = document.querySelector("#main-nav");
+const scrollButton = document.querySelector(".scroll-to-top");
+const copyButton = document.querySelector(".copy-bibtex-btn");
+const bibtex = document.querySelector("#bibtex-code");
 
-menuButton?.addEventListener("click", () => {
-  const open = menuButton.getAttribute("aria-expanded") === "true";
-  menuButton.setAttribute("aria-expanded", String(!open));
-  navigation.classList.toggle("open", !open);
-  document.body.classList.toggle("menu-open", !open);
-});
-
-navigation?.querySelectorAll("a").forEach((link) => {
-  link.addEventListener("click", () => {
-    navigation.classList.remove("open");
-    document.body.classList.remove("menu-open");
-    menuButton?.setAttribute("aria-expanded", "false");
-  });
-});
-
-const observer = new IntersectionObserver(
-  (entries) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add("visible");
-        observer.unobserve(entry.target);
-      }
-    });
-  },
-  { threshold: 0.08, rootMargin: "0px 0px -35px" }
+window.addEventListener(
+  "scroll",
+  () => scrollButton?.classList.toggle("visible", window.scrollY > 300),
+  { passive: true }
 );
 
-document.querySelectorAll(".reveal").forEach((element, index) => {
-  element.style.transitionDelay = `${Math.min(index % 4, 3) * 70}ms`;
-  observer.observe(element);
+scrollButton?.addEventListener("click", () => {
+  window.scrollTo({ top: 0, behavior: "smooth" });
 });
 
-const copyButton = document.querySelector(".copy-button");
 copyButton?.addEventListener("click", async () => {
-  const citation = document.querySelector(".bibtex code")?.textContent ?? "";
-  await navigator.clipboard.writeText(citation);
-  copyButton.textContent = "Copied";
+  if (!bibtex) return;
+
+  try {
+    await navigator.clipboard.writeText(bibtex.textContent);
+  } catch {
+    const textArea = document.createElement("textarea");
+    textArea.value = bibtex.textContent;
+    document.body.appendChild(textArea);
+    textArea.select();
+    document.execCommand("copy");
+    textArea.remove();
+  }
+
+  const label = copyButton.querySelector("span");
+  copyButton.classList.add("copied");
+  if (label) label.textContent = "Copied";
   window.setTimeout(() => {
-    copyButton.textContent = "Copy";
-  }, 1600);
+    copyButton.classList.remove("copied");
+    if (label) label.textContent = "Copy";
+  }, 1800);
 });
