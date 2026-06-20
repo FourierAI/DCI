@@ -15,7 +15,10 @@
 
 **Zhipeng Ye · Jiaqi Huang · Feng Jiang · Qiufeng Wang · Yikang Duan · Dawei Wang · Xihang Zhou · Qian Qiao**
 
+🌐 **Project Page:** [https://fourierai.github.io/DCI/](https://fourierai.github.io/DCI/)
+
 <p>
+  <a href="https://fourierai.github.io/DCI/">Project Page</a> ·
   <a href="#overview">Overview</a> ·
   <a href="#method">Method</a> ·
   <a href="#quick-start">Quick Start</a> ·
@@ -263,6 +266,8 @@ To mitigate this issue, we propose Divide-and-Conquer Inference (DCI), a novel t
 **Divide-and-Conquer Inference for Large-Scale Visual Recognition with Multimodal Large Language Models**
 
 The manuscript is currently under review. The accompanying experimental code and evaluation metadata are available in this repository.
+
+**Project page:** [https://fourierai.github.io/DCI/](https://fourierai.github.io/DCI/)
 
 ## Citation
 
