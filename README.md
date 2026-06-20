@@ -9,7 +9,6 @@
 [![Model Agnostic](https://img.shields.io/badge/Model-Agnostic-6f42c1?style=for-the-badge)](#why-dci)
 [![Plug and Play](https://img.shields.io/badge/Plug--and--Play-0969da?style=for-the-badge)](#why-dci)
 
-[![CI](https://github.com/FourierAI/DCI/actions/workflows/ci.yml/badge.svg)](https://github.com/FourierAI/DCI/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.9%2B-3776ab?logo=python&logoColor=white)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -185,7 +184,6 @@ version, timestamp, and Git revision. API keys are never written to disk.
 
 ```text
 DCI/
-├── .github/workflows/      # Continuous integration
 ├── dci/
 │   ├── configs.py          # Dataset registry and default K values
 │   └── runner.py           # Unified DCI evaluation CLI
@@ -237,8 +235,8 @@ The repository is designed to make every run auditable:
 - Sampling is deterministic for a fixed `--seed`.
 - Interrupted JSONL evaluations resume without recomputing completed images.
 - Every run writes a manifest with its environment and Git revision.
-- CI validates grouping, normalization, sampling, image encoding, and resume logic
-  on Python 3.9 and 3.12.
+- Unit tests validate grouping, normalization, sampling, image encoding, and
+  resume logic.
 
 For a controlled comparison, run the baseline and DCI with the same dataset,
 model endpoint, image root, seed, and sample selection:
