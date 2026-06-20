@@ -14,6 +14,7 @@
 <p>
   <a href="#overview">Overview</a> ·
   <a href="#method">Method</a> ·
+  <a href="#code">Code</a> ·
   <a href="#results">Results</a> ·
   <a href="#paper">Paper</a> ·
   <a href="#citation">Citation</a>
@@ -43,15 +44,15 @@ We introduce **Divide-and-Conquer Inference (DCI)**, a test-time scaling strateg
   <img src="assets/figures/dci-framework.png" width="100%" alt="Divide-and-Conquer Inference framework">
 </p>
 
-Given an image and a candidate set of \(N\) categories, DCI proceeds through five stages:
+Given an image and a candidate set of $N$ categories, DCI proceeds through five stages:
 
-1. **Divide** the candidate set into compact groups of size \(K\).
+1. **Divide** the candidate set into compact groups of size $K$.
 2. **Conquer** each independent sub-problem with the same MLLM.
 3. **Combine** the local predictions.
 4. **Prune** invalid or rejected branches.
 5. **Refine recursively** until a single prediction remains.
 
-The group size \(K\) provides a practical accuracy-efficiency trade-off. Smaller groups reduce local ambiguity and attention dilution, while independent groups can be evaluated in parallel.
+The group size $K$ provides a practical accuracy-efficiency trade-off. Smaller groups reduce local ambiguity and attention dilution, while independent groups can be evaluated in parallel.
 
 ### Conquer-phase prompting
 
@@ -71,6 +72,118 @@ A shared structured prompt enforces consistent decisions across sub-problems. It
 | **Scalable** | Dynamic pruning compresses the search space as inference progresses. |
 | **Parallelizable** | Independent candidate groups can be processed concurrently. |
 | **Efficient** | DCI avoids the prohibitive scaling behavior of flat long-sequence inference. |
+
+## Code
+
+This repository provides a unified, dataset-agnostic implementation of DCI for any multimodal model served through an **OpenAI-compatible API**. The runner supports recursive candidate pruning, parallel conquer calls, resumable evaluation, deterministic sampling, flat-prompt baselines, and per-run accuracy reports.
+
+### Installation
+
+```bash
+git clone https://github.com/FourierAI/DCI.git
+cd DCI
+
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Python 3.9 or later is recommended.
+
+### Serve an MLLM
+
+Start a vision-language model with an OpenAI-compatible server. For example, with vLLM:
+
+```bash
+pip install vllm
+vllm serve Qwen/Qwen3-VL-2B-Instruct --port 8000
+```
+
+You may also use another local or remote provider by passing `--api-base` and, when required, `--api-key`.
+
+### Prepare datasets
+
+The repository includes the metadata and evaluation splits used by the runner, but not the copyrighted dataset images. Place images under the default locations below, or point to an existing installation with `--image-root`.
+
+| Dataset | CLI name | Default image root |
+|:--|:--|:--|
+| CIFAR-100 | `cifar100` | `data/images/cifar100/` |
+| CUB-200-2011 | `cub200` | `data/images/cub200/` |
+| Caltech-256 | `caltech256` | `data/images/caltech256/` |
+| Food-101 | `food101` | `data/images/food101/` |
+| ImageNet-1K | `imagenet1k` | `data/images/imagenet1k/` |
+| ImageNet-21K label space | `imagenet21k` | `data/images/imagenet1k/` |
+
+ImageNet-21K experiments evaluate ImageNet-1K images against the expanded 21K candidate vocabulary, matching the large-label-space setting studied in the paper.
+
+### Run DCI
+
+```bash
+python -m dci.runner \
+  --dataset imagenet1k \
+  --model Qwen/Qwen3-VL-2B-Instruct \
+  --image-root /path/to/imagenet/val \
+  --k-values 100 50 20 10 \
+  --max-workers 10
+```
+
+For a quick smoke test:
+
+```bash
+python -m dci.runner \
+  --dataset cifar100 \
+  --model Qwen/Qwen3-VL-2B-Instruct \
+  --image-root /path/to/cifar100_test_images \
+  --k-values 10 \
+  --max-samples 20
+```
+
+Run the conventional flat-prompt baseline:
+
+```bash
+python -m dci.runner \
+  --dataset imagenet1k \
+  --model Qwen/Qwen3-VL-2B-Instruct \
+  --image-root /path/to/imagenet/val \
+  --baseline
+```
+
+Results are written to:
+
+```text
+outputs/<dataset>/<model>/k-<K>.jsonl
+outputs/<dataset>/<model>/k-<K>.txt
+```
+
+Existing JSONL records are detected automatically, so interrupted evaluations can be resumed with the same command.
+
+### Key options
+
+| Option | Description |
+|:--|:--|
+| `--dataset` | One of the six bundled dataset configurations. |
+| `--model` | Model identifier exposed by the inference server. |
+| `--api-base` | OpenAI-compatible endpoint; defaults to `http://127.0.0.1:8000/v1`. |
+| `--image-root` | Local root containing dataset images. |
+| `--k-values` | Candidate group sizes to evaluate. |
+| `--max-workers` | Maximum parallel conquer calls. |
+| `--max-samples` | Optional cap for fast experiments. |
+| `--samples-per-class` | Optional class-balanced sampling. |
+| `--baseline` | Disable decomposition and use one flat candidate prompt. |
+
+### Repository layout
+
+```text
+DCI/
+├── dci/
+│   ├── configs.py          # Dataset registry and default K values
+│   └── runner.py           # Unified DCI evaluation CLI
+├── data/
+│   └── metadata/           # Evaluation splits and class vocabularies
+├── assets/figures/         # Paper figures used in this README
+├── requirements.txt
+└── README.md
+```
 
 ## Results
 
@@ -111,7 +224,7 @@ To mitigate this issue, we propose Divide-and-Conquer Inference (DCI), a novel t
 
 **Divide-and-Conquer Inference for Large-Scale Visual Recognition with Multimodal Large Language Models**
 
-The manuscript is currently under review. The paper and source code will be released through this repository.
+The manuscript is currently under review. The accompanying experimental code and evaluation metadata are available in this repository.
 
 ## Citation
 

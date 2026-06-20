@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.DS_Store
+.env
+.venv/
+venv/
+outputs/
+data/images/
+*.jsonl
+*_accu.txt
+crecexp_*/
+crecexp_progress/
