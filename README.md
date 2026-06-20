@@ -270,7 +270,7 @@ If you find DCI useful in your research, please consider citing our work:
 ```bibtex
 @misc{ye2026dci,
   title  = {Divide-and-Conquer Inference for Large-Scale Visual Recognition with Multimodal Large Language Models},
-  author = {Ye, Zhipeng and Huang, Jiaqi and Jiang, Feng and Wang, Qiufeng and Duan, Yikang and Wang, Dawei and Zhou, Xihang and Qiao, Qian},
+  author = {Zhipeng Ye and Jiaqi Huang and Feng Jiang and Qiufeng Wang and Yikang Duan and Dawei Wang and Xihang Zhou and Qian Qiao},
   year   = {2026},
   note   = {Manuscript under review; source code available at \url{https://github.com/FourierAI/DCI}}
 }
