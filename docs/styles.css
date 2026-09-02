@@ -216,6 +216,49 @@ body {
   background: var(--background-accent);
 }
 
+.figure-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+.figure-grid .research-figure { margin-top: 0; }
+.compact-figure {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.compact-figure img { object-fit: contain; }
+.wide-scroll-figure { overflow-x: auto; }
+.wide-scroll-figure img { min-width: 980px; }
+
+.protocol-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+.protocol-grid > div {
+  padding: 1.25rem 1rem;
+  text-align: center;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: white;
+  box-shadow: var(--shadow-sm);
+}
+.protocol-grid strong {
+  display: block;
+  color: var(--primary-color);
+  font-size: 1.65rem;
+}
+.protocol-grid span {
+  color: var(--text-secondary);
+  font-size: .86rem;
+}
+.protocol-note {
+  margin-top: 1.5rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
 .result-cards { margin-top: 2rem !important; }
 .result-card {
   height: 100%;
@@ -335,9 +378,16 @@ body {
   .method-card { min-height: auto; }
   .research-figure { padding: .55rem; }
   .research-figure figcaption { text-align: left; }
+  .figure-grid { grid-template-columns: 1fr; }
+  .protocol-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .wide-scroll-figure img { min-width: 760px; }
   .code-window pre { padding: 1.4rem; font-size: .72rem; }
   .bibtex-header { align-items: flex-start; }
   #bibtex pre { font-size: .7rem; }
+}
+
+@media (max-width: 480px) {
+  .protocol-grid { grid-template-columns: 1fr; }
 }
 
 @media (prefers-reduced-motion: reduce) {

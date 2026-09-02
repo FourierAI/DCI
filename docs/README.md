@@ -1,5 +1,10 @@
 # DCI project page
 
+This page mirrors the final manuscript title, terminology, experimental
+protocol, scoped claims, and all 13 supplied manuscript figures. Web PNGs in
+`docs/assets/` are synchronized from the vector sources in
+`../assets/figures/`.
+
 This project page is adapted from the
 [Academic Project Page Template](https://github.com/eliahuhorwitz/Academic-project-page-template),
 which incorporates components from the

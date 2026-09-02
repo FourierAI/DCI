@@ -5,25 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <meta name="title" content="Divide-and-Conquer Inference">
-  <meta name="description" content="A training-free test-time scaling strategy for large-scale visual recognition with multimodal large language models.">
-  <meta name="keywords" content="divide-and-conquer inference, multimodal large language models, visual recognition, image classification, test-time scaling, MLLM">
+  <meta name="description" content="A training-free test-time strategy for large-scale image classification with multimodal large language models.">
+  <meta name="keywords" content="divide-and-conquer inference, multimodal large language models, image classification, test-time scaling, MLLM">
   <meta name="author" content="Zhipeng Ye, Jiaqi Huang, Feng Jiang, Qiufeng Wang, Yikang Duan, Dawei Wang, Xihang Zhou, Qian Qiao">
   <meta name="robots" content="index, follow">
 
   <meta property="og:type" content="article">
   <meta property="og:site_name" content="DCI Project Page">
   <meta property="og:title" content="Divide-and-Conquer Inference">
-  <meta property="og:description" content="Divide the search space, preserve the signal, and scale visual recognition.">
+  <meta property="og:description" content="Candidate-space decomposition for large-scale image classification with MLLMs.">
   <meta property="og:url" content="https://fourierai.github.io/DCI/">
-  <meta property="og:image" content="https://fourierai.github.io/DCI/assets/dci-framework.png">
+  <meta property="og:image" content="https://fourierai.github.io/DCI/assets/method.png">
   <meta property="og:image:alt" content="Overview of the Divide-and-Conquer Inference framework">
 
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Divide-and-Conquer Inference">
-  <meta name="twitter:description" content="A training-free test-time scaling strategy for large-scale visual recognition with MLLMs.">
-  <meta name="twitter:image" content="https://fourierai.github.io/DCI/assets/dci-framework.png">
+  <meta name="twitter:description" content="A training-free test-time strategy for large-scale image classification with MLLMs.">
+  <meta name="twitter:image" content="https://fourierai.github.io/DCI/assets/method.png">
 
-  <meta name="citation_title" content="Divide-and-Conquer Inference for Large-Scale Visual Recognition with Multimodal Large Language Models">
+  <meta name="citation_title" content="Divide-and-Conquer Inference for Large-Scale Image Classification with Multimodal Large Language Models">
   <meta name="citation_author" content="Ye, Zhipeng">
   <meta name="citation_author" content="Huang, Jiaqi">
   <meta name="citation_author" content="Jiang, Feng">
@@ -43,15 +43,14 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
   <link rel="stylesheet" href="styles.css">
 
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "ScholarlyArticle",
-    "headline": "Divide-and-Conquer Inference for Large-Scale Visual Recognition with Multimodal Large Language Models",
-    "description": "A training-free test-time scaling strategy for large-scale visual recognition with multimodal large language models.",
+    "headline": "Divide-and-Conquer Inference for Large-Scale Image Classification with Multimodal Large Language Models",
+    "description": "A training-free test-time strategy for large-scale image classification with multimodal large language models.",
     "author": [
       {"@type": "Person", "name": "Zhipeng Ye"},
       {"@type": "Person", "name": "Jiaqi Huang"},
@@ -64,8 +63,8 @@
     ],
     "datePublished": "2026",
     "url": "https://fourierai.github.io/DCI/",
-    "image": "https://fourierai.github.io/DCI/assets/dci-framework.png",
-    "keywords": ["multimodal large language models", "visual recognition", "test-time scaling", "image classification"],
+    "image": "https://fourierai.github.io/DCI/assets/method.png",
+    "keywords": ["multimodal large language models", "image classification", "test-time scaling"],
     "isAccessibleForFree": true
   }
   </script>
@@ -83,7 +82,7 @@
             <div class="column has-text-centered">
               <div class="venue-badge">Manuscript under review · 2026</div>
               <h1 class="title is-1 publication-title">
-                Divide-and-Conquer Inference for Large-Scale Visual Recognition with Multimodal Large Language Models
+                Divide-and-Conquer Inference for Large-Scale Image Classification with Multimodal Large Language Models
               </h1>
 
               <div class="is-size-5 publication-authors">
@@ -98,7 +97,7 @@
               </div>
 
               <div class="publication-tagline">
-                A training-free test-time scaling strategy for large-scale visual recognition with MLLMs
+                A training-free test-time strategy for candidate-space decomposition
               </div>
 
               <div class="publication-links">
@@ -110,10 +109,10 @@
                   </a>
                 </span>
                 <span class="link-block">
-                  <a href="https://github.com/FourierAI/DCI#quick-start" target="_blank" rel="noopener"
+                  <a href="https://github.com/FourierAI/DCI#paper-protocol" target="_blank" rel="noopener"
                      class="external-link button is-normal is-rounded is-dark">
                     <span class="icon"><i class="fas fa-terminal" aria-hidden="true"></i></span>
-                    <span>Quick Start</span>
+                    <span>Reproduce</span>
                   </a>
                 </span>
                 <span class="link-block">
@@ -130,14 +129,14 @@
     </section>
 
     <section class="hero teaser">
-      <div class="container is-max-desktop">
+      <div class="container is-widescreen">
         <div class="hero-body">
           <figure class="publication-banner">
-            <img src="assets/dci-framework.png" alt="Overview of the Divide-and-Conquer Inference framework">
+            <img src="assets/method.png" alt="Overview of Divide-and-Conquer Inference">
           </figure>
           <h2 class="subtitle has-text-centered teaser-caption">
-            DCI replaces one difficult global decision with a sequence of smaller local decisions,
-            recursively dividing the candidate space and pruning unlikely branches.
+            DCI uses one frozen MLLM to replace a difficult global decision with
+            recursively smaller local decisions over at most <i>B</i> candidates.
           </h2>
         </div>
       </div>
@@ -148,9 +147,10 @@
         <div class="tldr-box">
           <div class="tldr-label">TL;DR</div>
           <p>
-            As label spaces grow, long prompts dilute attention and collapse MLLM recognition accuracy.
-            <strong>DCI restores the signal by dividing the search space, solving local sub-problems in
-            parallel, and dynamically pruning candidates—without training or fine-tuning.</strong>
+            Mean MLLM classification accuracy generally decreases as the candidate
+            label set grows. <strong>DCI randomly partitions the candidate space,
+            solves same-level groups in parallel, retains non-null predictions, and
+            recursively prunes the search space without training.</strong>
           </p>
         </div>
       </div>
@@ -163,28 +163,32 @@
             <h2 class="title is-3">Abstract</h2>
             <div class="content has-text-justified">
               <p>
-                Multimodal Large Language Models (MLLMs) have demonstrated strong capabilities across a
-                wide range of vision-language tasks. However, when applied to large-scale image
-                classification, their performance degrades significantly as the label space expands—a
-                phenomenon we define as <strong>Performance Collapse in Long Sequence Recognition</strong>.
-                Through an information-theoretic analysis, we reveal that this collapse stems from a
-                fundamental conflict between escalating information entropy and attention dilution and
-                decay, which impairs the model's ability to maintain a sufficient signal-to-noise ratio
-                when processing extremely long prompts.
+                Multimodal Large Language Models (MLLMs) show strong vision-language
+                capabilities, yet their mean image-classification accuracy generally
+                decreases as the candidate label space expands. We call this empirical
+                pattern candidate-space performance degradation. Evaluations across
+                increasing candidate sizes show similar trends across diverse model
+                families even when prompts remain within their context windows.
               </p>
               <p>
-                To mitigate this issue, we propose <strong>Divide-and-Conquer Inference (DCI)</strong>, a
-                novel test-time scaling strategy for visual recognition with MLLMs. DCI recursively
-                decomposes complex global classification tasks into simpler localized sub-problems and
-                employs dynamic pruning to compress the search space. The method improves the local
-                signal-to-noise ratio, mitigates weight dilution in long-sequence inference, and achieves
-                favorable computational scaling. Extensive experiments demonstrate consistent accuracy
-                improvements across large-scale recognition benchmarks without additional training or
-                fine-tuning.
+                DCI is a training-free test-time strategy that partitions a global
+                classification problem into local decisions containing at most
+                <i>B</i> candidates and recursively prunes the candidate space. Across
+                ImageNet-1K, CIFAR-100, CUB-200-2011, Food-101, and a full-vocabulary
+                ImageNet-21K stress test, DCI improves observed mean accuracy in the
+                evaluated model-dataset settings. Selected full-vocabulary settings
+                also reduce measured latency relative to monolithic inference.
               </p>
             </div>
           </div>
         </div>
+        <figure class="research-figure">
+          <img src="assets/scaling_performance.png" alt="ImageNet-1K classification accuracy as candidate-set size increases" loading="lazy">
+          <figcaption>
+            Candidate-space performance degradation across ten evaluated MLLMs.
+            Points are five-run means and error bars are one run-level standard deviation.
+          </figcaption>
+        </figure>
       </div>
     </section>
 
@@ -194,7 +198,7 @@
           <div class="column is-four-fifths">
             <h2 class="title is-3">Method</h2>
             <p class="section-lead">
-              DCI performs coarse-to-fine recognition through four model-agnostic inference operations.
+              Algorithm 1 is implemented with the same prompt and output rule at every level.
             </p>
           </div>
         </div>
@@ -203,90 +207,177 @@
           <div class="column">
             <article class="method-card">
               <span>1</span><h3>Divide</h3>
-              <p>Partition the candidate label space into compact groups of size <i>K</i>.</p>
+              <p>Randomly partition the active labels into disjoint groups of at most <i>B</i>.</p>
             </article>
           </div>
           <div class="column">
             <article class="method-card">
               <span>2</span><h3>Conquer</h3>
-              <p>Solve independent localized recognition problems with the same MLLM.</p>
+              <p>Query every group independently with the same image, prompt, and frozen MLLM.</p>
             </article>
           </div>
           <div class="column">
             <article class="method-card">
-              <span>3</span><h3>Prune</h3>
-              <p>Discard rejected branches and retain only plausible category predictions.</p>
+              <span>3</span><h3>Combine</h3>
+              <p>Keep one valid prediction per group and prune branches that return <code>None</code>.</p>
             </article>
           </div>
           <div class="column">
             <article class="method-card">
-              <span>4</span><h3>Refine</h3>
-              <p>Repeat recursively until the search converges to one final prediction.</p>
+              <span>4</span><h3>Recurse</h3>
+              <p>Repeat until empty, singleton, or small enough for one final local decision.</p>
             </article>
           </div>
         </div>
 
         <figure class="research-figure">
-          <img src="assets/conquer-prompt.png" alt="Structured prompt used in the DCI conquer phase" loading="lazy">
+          <img src="assets/prompt.png" alt="Structured prompt used in the DCI conquer phase" loading="lazy">
           <figcaption>
-            <strong>Conquer-phase prompting.</strong> A structured prompt encourages exact local decisions
-            and allows a branch to return <code>None</code> when no candidate is plausible.
+            <strong>Conquer-phase prompt.</strong> A response is valid only when it
+            contains exactly one listed label; zero or multiple matches are null.
           </figcaption>
         </figure>
       </div>
     </section>
 
     <section class="section results-section hero is-light" id="results">
-      <div class="container is-max-desktop">
+      <div class="container is-widescreen">
         <div class="columns is-centered has-text-centered">
           <div class="column is-four-fifths">
             <h2 class="title is-3">Results</h2>
             <p class="section-lead">
-              DCI consistently mitigates accuracy degradation as the candidate label space expands.
+              DCI has higher observed mean accuracy in all 24 model-dataset pairs
+              in the main comparison, with a 4.67 percentage-point macro-average gain.
             </p>
           </div>
         </div>
 
         <figure class="research-figure">
-          <img src="assets/scaling-results.png" alt="DCI scaling results across six multimodal large language models" loading="lazy">
+          <img src="assets/dci_main.png" alt="DCI main results across four datasets and six MLLMs" loading="lazy">
           <figcaption>
-            Performance across six representative MLLMs as the number of candidate categories increases.
+            Mean accuracy over five runs; error bars are one run-level standard deviation.
+            DCI uses random grouping with <i>B</i> = 10.
           </figcaption>
         </figure>
 
-        <div class="columns is-multiline result-cards">
-          <div class="column is-one-third"><div class="result-card"><strong>+19.0 pp</strong><span>DeepSeek-VL-7B</span></div></div>
-          <div class="column is-one-third"><div class="result-card"><strong>+10.8 pp</strong><span>Qwen3-VL-2B</span></div></div>
-          <div class="column is-one-third"><div class="result-card"><strong>+9.8 pp</strong><span>Qwen2.5-VL-7B</span></div></div>
-          <div class="column is-one-third"><div class="result-card"><strong>+6.6 pp</strong><span>Kimi-VL-A3B</span></div></div>
-          <div class="column is-one-third"><div class="result-card"><strong>+5.2 pp</strong><span>Gemma4-E4B</span></div></div>
-          <div class="column is-one-third"><div class="result-card"><strong>+3.6 pp</strong><span>Qwen3-VL-8B</span></div></div>
-        </div>
+        <figure class="research-figure">
+          <img src="assets/dci_suppression.png" alt="Candidate-set scaling with and without DCI" loading="lazy">
+          <figcaption>
+            Candidate-set scaling on ImageNet-1K. At <i>N</i> = 1000, all six models
+            improve; the largest reported gain is +18.54 pp for DeepSeek-VL-7B-chat.
+          </figcaption>
+        </figure>
+
+        <figure class="research-figure">
+          <img src="assets/imagenet21k_dci_advantage.png" alt="Full-vocabulary ImageNet-21K stress-test results" loading="lazy">
+          <figcaption>
+            Full-vocabulary ImageNet-21K stress test with <i>B</i> = 100: local
+            open-source models and API-served models, reported over five runs.
+          </figcaption>
+        </figure>
       </div>
     </section>
 
-    <section class="section" id="complexity">
-      <div class="container is-max-desktop">
+    <section class="section" id="tradeoffs">
+      <div class="container is-widescreen">
         <div class="columns is-centered has-text-centered">
           <div class="column is-four-fifths">
-            <h2 class="title is-3">Complexity and Scalability</h2>
+            <h2 class="title is-3">Accuracy, Latency, and Design Choices</h2>
             <p class="section-lead">
-              DCI controls local sequence length, parallelizes independent groups, and progressively
-              compresses the active search space.
+              The best group size is model and deployment dependent; smaller groups
+              simplify local decisions but require more recursive calls.
+            </p>
+          </div>
+        </div>
+
+        <div class="figure-grid">
+          <figure class="research-figure compact-figure">
+            <img src="assets/dci_imagenet21k_tradeoff.png" alt="ImageNet-21K group-size trade-off" loading="lazy">
+            <figcaption>Full-vocabulary ImageNet-21K group-size sweep.</figcaption>
+          </figure>
+          <figure class="research-figure compact-figure">
+            <img src="assets/dci_group_size_tradeoff.png" alt="Standard label-space group-size trade-off" loading="lazy">
+            <figcaption>CIFAR-100 and ImageNet-1K group-size sweep.</figcaption>
+          </figure>
+          <figure class="research-figure compact-figure">
+            <img src="assets/tts_accuracy_latency_tradeoff.png" alt="Accuracy-latency comparison with test-time scaling methods" loading="lazy">
+            <figcaption>Comparison with five general-purpose test-time scaling methods.</figcaption>
+          </figure>
+          <figure class="research-figure compact-figure">
+            <img src="assets/gs_ablation.png" alt="Category grouping strategy ablation" loading="lazy">
+            <figcaption>Random, most-similar, and least-similar grouping.</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section class="section hero is-light" id="complexity">
+      <div class="container is-widescreen">
+        <div class="columns is-centered has-text-centered">
+          <div class="column is-four-fifths">
+            <h2 class="title is-3">Computational Characteristics</h2>
+            <p class="section-lead">
+              The paper separates local-call count, computational work, and wall-clock
+              latency. Its squared-attention surface is a proxy, not measured FLOPs.
             </p>
           </div>
         </div>
         <figure class="research-figure">
-          <img src="assets/complexity-analysis.png" alt="Computational complexity and scalability analysis of DCI" loading="lazy">
+          <img src="assets/dci_complexity_analysis.png" alt="Squared-attention work proxy for DCI" loading="lazy">
           <figcaption>
-            Compared with flat long-sequence inference, DCI exhibits more favorable scaling behavior
-            in large-label recognition.
+            Increasing <i>B</i> reduces the number of calls but lengthens each local prompt,
+            producing an intermediate proxy-minimizing range for large <i>N</i>.
           </figcaption>
         </figure>
       </div>
     </section>
 
-    <section class="section hero is-light" id="code">
+    <section class="section" id="qualitative">
+      <div class="container is-widescreen">
+        <div class="columns is-centered has-text-centered">
+          <div class="column is-four-fifths">
+            <h2 class="title is-3">Candidate-Pruning Trajectories</h2>
+            <p class="section-lead">
+              Two representative examples using Qwen3-VL-2B-Instruct with <i>B</i> = 5.
+            </p>
+          </div>
+        </div>
+        <figure class="research-figure wide-scroll-figure">
+          <img src="assets/cub_dci.png" alt="CUB-200-2011 candidate-pruning trajectory" loading="lazy">
+          <figcaption>DCI changes the flat prediction to the correct Sooty Albatross class.</figcaption>
+        </figure>
+        <figure class="research-figure wide-scroll-figure">
+          <img src="assets/food_dci.png" alt="Food-101 candidate-pruning trajectory" loading="lazy">
+          <figcaption>DCI removes Caesar salad and selects the correct beet salad class.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section hero is-light" id="protocol">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered">
+          <div class="column is-four-fifths">
+            <h2 class="title is-3 has-text-centered">Paper Protocol</h2>
+            <div class="protocol-grid">
+              <div><strong>5 runs</strong><span>Mean ± run-level SD</span></div>
+              <div><strong>10,000</strong><span>CIFAR-100 test images</span></div>
+              <div><strong>5,794</strong><span>CUB-200-2011 test images</span></div>
+              <div><strong>25,250</strong><span>Food-101 test images</span></div>
+              <div><strong>50,000</strong><span>ImageNet-1K validation images</span></div>
+              <div><strong>21,843</strong><span>ImageNet-21K candidate synsets</span></div>
+            </div>
+            <p class="protocol-note">
+              Candidate subsets for <i>N</i> &lt; 1000 are independently sampled for
+              every run and size, with all 50 ImageNet-1K validation images evaluated
+              per selected class. ImageNet-21K samples 1,000 distinct images uniformly
+              from its available pool in each run.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="code">
       <div class="container is-max-desktop">
         <div class="columns is-centered">
           <div class="column is-four-fifths">
@@ -301,8 +392,26 @@ dci-eval \
   --dataset imagenet1k \
   --model Qwen/Qwen3-VL-2B-Instruct \
   --image-root /path/to/imagenet/val \
-  --k-values 100 50 20 10</code></pre>
+  --b-values 10 \
+  --runs 5</code></pre>
             </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section hero is-light" id="limitations">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered">
+          <div class="column is-four-fifths content has-text-justified">
+            <h2 class="title is-3 has-text-centered">Scope and Limitations</h2>
+            <p>
+              Candidate interference and limited long-context utilization are plausible
+              contributors to the observed degradation, not proven mechanisms. DCI can
+              introduce extra latency on smaller label spaces, and its value depends on
+              the deployment budget. The strongest latency claim is limited to selected
+              full-vocabulary ImageNet-21K configurations on the reported hardware.
+            </p>
           </div>
         </div>
       </div>
@@ -318,7 +427,7 @@ dci-eval \
           </button>
         </div>
         <pre><code id="bibtex-code">@misc{ye2026dci,
-  title  = {Divide-and-Conquer Inference for Large-Scale Visual Recognition with Multimodal Large Language Models},
+  title  = {Divide-and-Conquer Inference for Large-Scale Image Classification with Multimodal Large Language Models},
   author = {Zhipeng Ye and Jiaqi Huang and Feng Jiang and Qiufeng Wang and Yikang Duan and Dawei Wang and Xihang Zhou and Qian Qiao},
   year   = {2026},
   note   = {Manuscript under review; source code available at \url{https://github.com/FourierAI/DCI}}
@@ -330,12 +439,11 @@ dci-eval \
   <footer class="footer">
     <div class="container">
       <div class="content has-text-centered">
-        <p>
-          <strong>DCI</strong>: divide the search space, preserve the signal, and scale visual recognition.
-        </p>
+        <p><strong>DCI</strong>: candidate-space decomposition for large-scale image classification.</p>
         <p>
           <a href="https://github.com/FourierAI/DCI">Code</a>
           · <a href="#abstract">Abstract</a>
+          · <a href="#protocol">Protocol</a>
           · <a href="#bibtex">Citation</a>
         </p>
         <p class="template-credit">
@@ -343,9 +451,7 @@ dci-eval \
           <a href="https://github.com/eliahuhorwitz/Academic-project-page-template" target="_blank" rel="noopener">
             Academic Project Page Template
           </a>, licensed under
-          <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="license noopener">
-            CC BY-SA 4.0
-          </a>.
+          <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="license noopener">CC BY-SA 4.0</a>.
         </p>
       </div>
     </div>

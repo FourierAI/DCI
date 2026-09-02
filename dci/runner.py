@@ -2,29 +2,33 @@ from __future__ import annotations
 
 import argparse
 import base64
+import hashlib
 import json
 import mimetypes
 import os
 import platform
 import random
+import re
+import statistics
 import subprocess
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from openai import OpenAI
+from openai import APIError, OpenAI
 from tqdm import tqdm
 
 from .configs import DATASETS, DatasetConfig, resolve_path
 
-
-PROMPT = """Please directly identify the category name of the image from the
-candidate category name list. {decision_rule} Do not output sentences or
-explanations; output only one category name exactly as listed (respect case and
-singular/plural form).
+PROMPT = """Please directly identify the category name of the image from the candidate list.
+Always choose the most likely category whenever possible; output 'None' only if the
+image clearly does not belong to any category
+in the list. Do not output sentences or explanations; output only the category
+name exactly as listed (preserve case and singular/plural form).
 
 Example:
 Q: There are 3 categories, [Leopards, wild_cat, electric_guitar].
@@ -36,68 +40,321 @@ Q: There are {count} categories, [{labels}].
 Which category does the image belong to?
 A:"""
 
+IMAGE_SUFFIXES = {
+    ".bmp",
+    ".gif",
+    ".jpeg",
+    ".jpg",
+    ".png",
+    ".tif",
+    ".tiff",
+    ".webp",
+}
+
+
+@dataclass(frozen=True)
+class LoadedDataset:
+    image_root: Path
+    image_to_label: dict[str, str]
+    labels: list[str]
+    catalog_sha256: str
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Run Divide-and-Conquer Inference with an OpenAI-compatible MLLM server."
+        description=(
+            "Run the paper-aligned Divide-and-Conquer Inference protocol with "
+            "an OpenAI-compatible MLLM server."
+        )
     )
     parser.add_argument("--dataset", required=True, choices=sorted(DATASETS))
-    parser.add_argument("--model", required=True, help="Model name exposed by the API server.")
+    parser.add_argument(
+        "--model", required=True, help="Model name exposed by the API server."
+    )
     parser.add_argument(
         "--api-base",
         default=os.getenv("OPENAI_BASE_URL", "http://127.0.0.1:8000/v1"),
     )
     parser.add_argument("--api-key", default=os.getenv("OPENAI_API_KEY", "EMPTY"))
-    parser.add_argument("--image-root", help="Dataset image root; overrides the default path.")
-    parser.add_argument("--metadata", help="Metadata JSON path; overrides the bundled path.")
-    parser.add_argument("--k-values", nargs="+", type=int)
+    parser.add_argument(
+        "--image-root", help="Dataset image root; overrides the default path."
+    )
+    parser.add_argument(
+        "--metadata",
+        help=(
+            "Optional JSON image index. Required only when ImageNet-21K should "
+            "not be indexed directly from --image-root."
+        ),
+    )
+    parser.add_argument(
+        "--b-values",
+        "--k-values",
+        dest="b_values",
+        nargs="+",
+        type=int,
+        help="Maximum local group sizes B. --k-values is retained as an alias.",
+    )
+    parser.add_argument(
+        "--candidate-counts",
+        nargs="+",
+        type=int,
+        help="Candidate-set sizes N; defaults to the complete vocabulary.",
+    )
+    parser.add_argument(
+        "--runs", type=int, default=5, help="Independent runs; the paper uses 5."
+    )
     parser.add_argument("--max-workers", type=int, default=10)
     parser.add_argument("--max-samples", type=int)
     parser.add_argument("--samples-per-class", type=int)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--output-dir", default="outputs")
-    parser.add_argument("--baseline", action="store_true", help="Use one flat prompt.")
+    parser.add_argument(
+        "--baseline", action="store_true", help="Use one monolithic prompt."
+    )
     parser.add_argument("--timeout", type=float, default=3600)
     parser.add_argument(
         "--max-retries",
         type=int,
-        default=5,
-        help="Maximum retries for transient API failures.",
+        default=0,
+        help=(
+            "Retries for API failures; 0 (the paper default) retries until a "
+            "response is obtained."
+        ),
     )
-    parser.add_argument("--max-tokens", type=int, default=64)
+    parser.add_argument(
+        "--max-tokens",
+        type=int,
+        help="Optional response-token cap; omitted to retain the model setting.",
+    )
     return parser.parse_args()
+
+
+def _sha256_text(values: list[str]) -> str:
+    payload = json.dumps(values, ensure_ascii=False, separators=(",", ":"))
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def _validated_dataset(
+    config: DatasetConfig,
+    image_root: Path,
+    image_to_label: dict[str, str],
+    labels: list[str],
+) -> LoadedDataset:
+    if len(labels) != config.expected_labels:
+        raise ValueError(
+            f"Expected {config.expected_labels} unique candidate labels, "
+            f"found {len(labels)}."
+        )
+    if (
+        config.expected_images is not None
+        and len(image_to_label) != config.expected_images
+    ):
+        raise ValueError(
+            f"Expected {config.expected_images} evaluation images, "
+            f"found {len(image_to_label)}."
+        )
+    unknown = sorted(set(image_to_label.values()) - set(labels))
+    if unknown:
+        raise ValueError(
+            f"Image index contains labels absent from the catalog: {unknown[:5]}"
+        )
+    return LoadedDataset(image_root, image_to_label, labels, _sha256_text(labels))
+
+
+def _load_mapping(path: Path) -> tuple[dict[str, str], list[str]]:
+    with path.open(encoding="utf-8") as handle:
+        payload = json.load(handle)
+    image_to_label = {
+        image: item["class_name"] if isinstance(item, dict) else str(item)
+        for image, item in payload.items()
+    }
+    return image_to_label, sorted(set(image_to_label.values()))
+
+
+def _load_json_split(path: Path, split: str) -> tuple[dict[str, str], list[str]]:
+    with path.open(encoding="utf-8") as handle:
+        payload = json.load(handle)
+    rows = payload[split]
+    id_to_name: dict[str, str] = {}
+    for row in rows:
+        class_id, name = str(row[1]), str(row[-1])
+        previous = id_to_name.setdefault(class_id, name)
+        if previous != name:
+            raise ValueError(
+                f"Class {class_id} has conflicting names: {previous!r}, {name!r}"
+            )
+
+    name_counts: dict[str, int] = {}
+    for name in id_to_name.values():
+        name_counts[name] = name_counts.get(name, 0) + 1
+    display = {
+        class_id: name if name_counts[name] == 1 else f"{name} [class {class_id}]"
+        for class_id, name in id_to_name.items()
+    }
+    labels = [
+        display[class_id] for class_id in sorted(display, key=lambda value: int(value))
+    ]
+    image_to_label = {str(row[0]): display[str(row[1])] for row in rows}
+    return image_to_label, labels
+
+
+def _find_dataset_root(image_root: Path, marker: str) -> Path:
+    for candidate in (image_root, image_root.parent):
+        if (candidate / marker).is_file():
+            return candidate
+    raise FileNotFoundError(
+        f"Could not find {marker} beside {image_root}. Use the official dataset layout."
+    )
+
+
+def _read_index(path: Path) -> dict[int, str]:
+    result: dict[int, str] = {}
+    with path.open(encoding="utf-8") as handle:
+        for line in handle:
+            key, value = line.rstrip("\n").split(maxsplit=1)
+            result[int(key)] = value
+    return result
+
+
+def _load_cub_official(
+    image_root: Path,
+) -> tuple[Path, dict[str, str], list[str]]:
+    root = _find_dataset_root(image_root, "train_test_split.txt")
+    actual_image_root = root / "images"
+    images = _read_index(root / "images.txt")
+    class_ids = {
+        key: int(value)
+        for key, value in _read_index(root / "image_class_labels.txt").items()
+    }
+    split = {
+        key: int(value)
+        for key, value in _read_index(root / "train_test_split.txt").items()
+    }
+    classes = _read_index(root / "classes.txt")
+    image_to_label = {
+        images[image_id]: classes[class_ids[image_id]].split(".", maxsplit=1)[-1]
+        for image_id in sorted(images)
+        if split[image_id] == 0
+    }
+    labels = [
+        classes[class_id].split(".", maxsplit=1)[-1] for class_id in sorted(classes)
+    ]
+    return actual_image_root, image_to_label, labels
+
+
+def _load_food101_official(
+    image_root: Path,
+) -> tuple[Path, dict[str, str], list[str]]:
+    for root in (image_root, image_root.parent):
+        test_file = root / "meta" / "test.txt"
+        if test_file.is_file():
+            break
+    else:
+        raise FileNotFoundError(
+            f"Could not find meta/test.txt beside {image_root}. "
+            "Use the official Food-101 layout."
+        )
+    actual_image_root = root / "images"
+    entries = [
+        line.strip()
+        for line in test_file.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    image_to_label = {
+        f"{entry}.jpg": entry.split("/", maxsplit=1)[0] for entry in entries
+    }
+    labels = sorted(set(image_to_label.values()))
+    return actual_image_root, image_to_label, labels
+
+
+def _load_imagenet21k_catalog(path: Path) -> tuple[dict[str, str], list[str]]:
+    rows: list[tuple[str, str]] = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        wnid, description = line.split(",", maxsplit=1)
+        rows.append((wnid.strip(), description.strip()))
+    counts: dict[str, int] = {}
+    for _, description in rows:
+        key = description.casefold()
+        counts[key] = counts.get(key, 0) + 1
+    by_wnid = {
+        wnid: (
+            description
+            if counts[description.casefold()] == 1
+            else f"{description} [{wnid}]"
+        )
+        for wnid, description in rows
+    }
+    return by_wnid, [by_wnid[wnid] for wnid, _ in rows]
+
+
+def _load_imagenet21k_index(
+    image_root: Path,
+    metadata_path: Path | None,
+    by_wnid: dict[str, str],
+) -> dict[str, str]:
+    if metadata_path is not None:
+        with metadata_path.open(encoding="utf-8") as handle:
+            payload = json.load(handle)
+        image_to_label: dict[str, str] = {}
+        for image, value in payload.items():
+            wnid = value.get("wnid") if isinstance(value, dict) else str(value)
+            if wnid not in by_wnid:
+                raise ValueError(f"Unknown ImageNet-21K WNID {wnid!r} for {image!r}")
+            image_to_label[image] = by_wnid[wnid]
+        return image_to_label
+
+    image_to_label = {}
+    for path in image_root.rglob("*"):
+        if not path.is_file() or path.suffix.casefold() not in IMAGE_SUFFIXES:
+            continue
+        relative = path.relative_to(image_root)
+        wnid = next((part for part in relative.parts if part in by_wnid), None)
+        if wnid is not None:
+            image_to_label[relative.as_posix()] = by_wnid[wnid]
+    if not image_to_label:
+        raise FileNotFoundError(
+            "No ImageNet-21K images were indexed. Arrange images under WNID "
+            "directories or pass --metadata with a {relative_path: wnid} JSON index."
+        )
+    return image_to_label
 
 
 def load_dataset(
     repo_root: Path,
     config: DatasetConfig,
     metadata_override: str | None,
-) -> tuple[dict[str, str], list[str]]:
-    metadata_path = resolve_path(repo_root, metadata_override or config.metadata)
-    with metadata_path.open(encoding="utf-8") as handle:
-        payload = json.load(handle)
+    image_root_override: str | None,
+) -> LoadedDataset:
+    image_root = resolve_path(
+        repo_root, image_root_override or config.default_image_root
+    )
+    metadata_path = (
+        resolve_path(repo_root, metadata_override) if metadata_override else None
+    )
 
-    if config.split == "mapping":
-        image_to_label = {
-            image: item["class_name"] for image, item in payload.items()
-        }
+    if metadata_override and config.loader != "imagenet21k":
+        image_to_label, labels = _load_mapping(metadata_path)
+    elif config.loader == "mapping":
+        image_to_label, labels = _load_mapping(
+            resolve_path(repo_root, config.metadata or "")
+        )
+    elif config.loader == "json_split":
+        image_to_label, labels = _load_json_split(
+            resolve_path(repo_root, config.metadata or ""), config.split or ""
+        )
+    elif config.loader == "cub_official":
+        image_root, image_to_label, labels = _load_cub_official(image_root)
+    elif config.loader == "food101_official":
+        image_root, image_to_label, labels = _load_food101_official(image_root)
+    elif config.loader == "imagenet21k":
+        by_wnid, labels = _load_imagenet21k_catalog(
+            resolve_path(repo_root, config.label_file or "")
+        )
+        image_to_label = _load_imagenet21k_index(image_root, metadata_path, by_wnid)
     else:
-        image_to_label = {
-            item[0]: item[-1] for item in payload[config.split]
-        }
+        raise ValueError(f"Unsupported dataset loader: {config.loader}")
 
-    if config.label_file:
-        label_path = resolve_path(repo_root, config.label_file)
-        with label_path.open(encoding="utf-8") as handle:
-            labels = [
-                line.rstrip("\n").split(",", maxsplit=2)[1].strip()
-                for line in handle
-                if "," in line
-            ]
-    else:
-        labels = sorted(set(image_to_label.values()))
-
-    return image_to_label, list(dict.fromkeys(labels))
+    return _validated_dataset(config, image_root, image_to_label, labels)
 
 
 def sample_images(
@@ -115,11 +372,43 @@ def sample_images(
         images = []
         for label in sorted(grouped):
             candidates = sorted(grouped[label])
-            images.extend(rng.sample(candidates, min(samples_per_class, len(candidates))))
+            images.extend(
+                rng.sample(candidates, min(samples_per_class, len(candidates)))
+            )
 
     if max_samples is not None and len(images) > max_samples:
         images = rng.sample(images, max_samples)
     return images
+
+
+def select_candidate_problem(
+    image_to_label: dict[str, str],
+    labels: list[str],
+    candidate_count: int,
+    samples_per_class: int | None,
+    max_samples: int | None,
+    rng: random.Random,
+) -> tuple[dict[str, str], list[str], list[str]]:
+    if not 2 <= candidate_count <= len(labels):
+        raise ValueError(f"Candidate count must be between 2 and {len(labels)}.")
+    if candidate_count == len(labels):
+        selected_labels = labels[:]
+    else:
+        available = set(image_to_label.values())
+        eligible = [label for label in labels if label in available]
+        if candidate_count > len(eligible):
+            raise ValueError(
+                f"Only {len(eligible)} candidate labels have indexed evaluation "
+                f"images; cannot sample N={candidate_count}."
+            )
+        selected = set(rng.sample(eligible, candidate_count))
+        selected_labels = [label for label in labels if label in selected]
+    selected_set = set(selected_labels)
+    selected_mapping = {
+        image: label for image, label in image_to_label.items() if label in selected_set
+    }
+    images = sample_images(selected_mapping, samples_per_class, max_samples, rng)
+    return selected_mapping, selected_labels, images
 
 
 class DCIClassifier:
@@ -128,89 +417,129 @@ class DCIClassifier:
         client: OpenAI,
         model: str,
         max_workers: int,
-        max_tokens: int,
+        max_tokens: int | None,
+        seed: int = 0,
+        max_retries: int = 5,
     ) -> None:
         self.client = client
         self.model = model
         self.max_workers = max_workers
         self.max_tokens = max_tokens
+        self.seed = seed
+        self.max_retries = max_retries
 
     @staticmethod
     def encode_image(image_path: Path) -> str:
-        mime_type = mimetypes.guess_type(image_path.name)[0] or "application/octet-stream"
+        mime_type = (
+            mimetypes.guess_type(image_path.name)[0] or "application/octet-stream"
+        )
         with image_path.open("rb") as handle:
             encoded = base64.b64encode(handle.read()).decode("utf-8")
         return f"data:{mime_type};base64,{encoded}"
 
-    def query(self, image_data_url: str, labels: list[str], allow_none: bool) -> str:
-        decision_rule = (
-            "Always choose the most likely category from the list whenever possible, "
-            "and only output 'None' if the image clearly does not belong to any "
-            "category in the list."
-            if allow_none
-            else "Always choose the most likely category from the list."
-        )
-        prompt = PROMPT.format(
-            decision_rule=decision_rule,
-            count=len(labels),
-            labels=", ".join(labels),
-        )
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
+    def query(self, image_data_url: str, labels: list[str]) -> str:
+        prompt = PROMPT.format(count=len(labels), labels=", ".join(labels))
+        retries = 0
+        while True:
+            try:
+                request: dict[str, Any] = {
+                    "model": self.model,
+                    "messages": [
                         {
-                            "type": "image_url",
-                            "image_url": {"url": image_data_url},
-                        },
-                        {"type": "text", "text": prompt},
+                            "role": "user",
+                            "content": [
+                                {
+                                    "type": "image_url",
+                                    "image_url": {"url": image_data_url},
+                                },
+                                {"type": "text", "text": prompt},
+                            ],
+                        }
                     ],
                 }
-            ],
-            max_tokens=self.max_tokens,
-        )
-        return (response.choices[0].message.content or "").strip()
+                if self.max_tokens is not None:
+                    request["max_tokens"] = self.max_tokens
+                response = self.client.chat.completions.create(**request)
+                return (response.choices[0].message.content or "").strip()
+            except APIError:
+                retries += 1
+                if self.max_retries > 0 and retries > self.max_retries:
+                    raise
+                time.sleep(min(2 ** min(retries - 1, 5), 30))
 
     @staticmethod
-    def groups(labels: list[str], size: int) -> list[list[str]]:
-        return [labels[index : index + size] for index in range(0, len(labels), size)]
+    def groups(
+        labels: list[str], size: int, rng: random.Random | None = None
+    ) -> list[list[str]]:
+        shuffled = labels[:]
+        if rng is not None:
+            rng.shuffle(shuffled)
+        return [
+            shuffled[index : index + size] for index in range(0, len(shuffled), size)
+        ]
 
     @staticmethod
     def normalize_prediction(prediction: str, candidates: list[str]) -> str | None:
         cleaned = prediction.strip().strip("`\"'. ")
-        if cleaned.lower() == "none":
+        if re.search(r"(?<!\w)None(?!\w)", prediction, flags=re.IGNORECASE):
             return None
         exact = {label.casefold(): label for label in candidates}
-        return exact.get(cleaned.casefold())
+        if cleaned.casefold() in exact:
+            return exact[cleaned.casefold()]
 
-    def classify(self, image_path: Path, labels: list[str], k: int) -> str:
+        matches: list[tuple[int, int, str]] = []
+        for label in sorted(candidates, key=len, reverse=True):
+            pattern = rf"(?<!\w){re.escape(label)}(?!\w)"
+            for match in re.finditer(pattern, prediction, flags=re.IGNORECASE):
+                matches.append((match.start(), match.end(), label))
+        filtered = [
+            match
+            for match in matches
+            if not any(
+                other[0] <= match[0]
+                and other[1] >= match[1]
+                and (other[1] - other[0]) > (match[1] - match[0])
+                for other in matches
+            )
+        ]
+        unique = {label for _, _, label in filtered}
+        return next(iter(unique)) if len(unique) == 1 else None
+
+    def _image_rng(self, image_path: Path) -> random.Random:
+        payload = f"{self.seed}\0{image_path.as_posix()}".encode()
+        digest = hashlib.sha256(payload).digest()
+        return random.Random(int.from_bytes(digest[:8], "big"))
+
+    def classify(self, image_path: Path, labels: list[str], b: int) -> str | None:
+        if b < 2:
+            raise ValueError("B must be at least 2.")
         image_data_url = self.encode_image(image_path)
         active = labels[:]
-        while len(active) > k:
-            groups = self.groups(active, k)
+        rng = self._image_rng(image_path)
+
+        while True:
+            if not active:
+                return None
+            if len(active) == 1:
+                return active[0]
+            if len(active) <= b:
+                return self.normalize_prediction(
+                    self.query(image_data_url, active), active
+                )
+
+            groups = self.groups(active, b, rng)
             with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
                 raw = list(
                     executor.map(
-                        lambda group: self.query(
-                            image_data_url, group, allow_none=True
-                        ),
-                        groups,
+                        lambda group: self.query(image_data_url, group), groups
                     )
                 )
-            survivors = [
+            active = [
                 normalized
                 for prediction, group in zip(raw, groups)
                 if (normalized := self.normalize_prediction(prediction, group))
+                is not None
             ]
-            if not survivors:
-                # A forced global decision guarantees progress if every branch rejects.
-                return self.query(image_data_url, active, allow_none=False)
-            active = list(dict.fromkeys(survivors))
-
-        prediction = self.query(image_data_url, active, allow_none=False)
-        return self.normalize_prediction(prediction, active) or prediction
 
 
 def read_completed(path: Path) -> set[str]:
@@ -225,7 +554,8 @@ def read_completed(path: Path) -> set[str]:
                 completed.add(json.loads(line)["image"])
             except (json.JSONDecodeError, KeyError, TypeError) as exc:
                 print(
-                    f"Warning: ignoring malformed record at {path}:{line_number}: {exc}",
+                    f"Warning: ignoring malformed record at {path}:"
+                    f"{line_number}: {exc}",
                     file=sys.stderr,
                 )
     return completed
@@ -249,10 +579,13 @@ def write_manifest(
     args: argparse.Namespace,
     repo_root: Path,
     *,
-    k: int,
+    run_index: int,
+    run_seed: int,
+    b: int,
     mode: str,
-    num_images: int,
-    num_labels: int,
+    images: list[str],
+    selected_labels: list[str],
+    full_catalog_sha256: str,
 ) -> None:
     arguments = vars(args).copy()
     arguments.pop("api_key", None)
@@ -262,15 +595,21 @@ def write_manifest(
         "python": sys.version,
         "platform": platform.platform(),
         "mode": mode,
-        "k": k,
-        "num_images": num_images,
-        "num_labels": num_labels,
+        "run_index": run_index,
+        "run_seed": run_seed,
+        "B": b,
+        "num_images": len(images),
+        "num_labels": len(selected_labels),
+        "evaluation_images": images,
+        "candidate_labels": selected_labels,
+        "full_catalog_sha256": full_catalog_sha256,
+        "prompt_sha256": hashlib.sha256(PROMPT.encode("utf-8")).hexdigest(),
         "arguments": arguments,
     }
-    path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
-def evaluate(path: Path, elapsed: float, new_samples: int) -> None:
+def evaluate(path: Path, elapsed: float, new_samples: int) -> dict[str, float | int]:
     total = correct = 0
     with path.open(encoding="utf-8") as handle:
         for line in handle:
@@ -281,86 +620,163 @@ def evaluate(path: Path, elapsed: float, new_samples: int) -> None:
             total += 1
             correct += row["prediction"] == row["target"]
     accuracy = 100 * correct / total if total else 0.0
+    seconds_per_new_image = elapsed / new_samples if new_samples else 0.0
     report = (
         f"Total samples: {total}\n"
         f"Correct predictions: {correct}\n"
-        f"Accuracy: {accuracy:.2f}%\n"
-        f"New samples this run: {new_samples}\n"
-        f"Elapsed time this run: {elapsed:.2f}s\n"
-        f"Time per new image: {elapsed / new_samples if new_samples else 0:.2f}s\n"
+        f"Accuracy: {accuracy:.4f}%\n"
+        f"New samples this invocation: {new_samples}\n"
+        f"Elapsed time this invocation: {elapsed:.2f}s\n"
+        f"Time per new image: {seconds_per_new_image:.4f}s\n"
     )
     path.with_suffix(".txt").write_text(report, encoding="utf-8")
     print(report)
+    return {
+        "total": total,
+        "correct": correct,
+        "accuracy": accuracy,
+        "elapsed_seconds": elapsed,
+        "new_samples": new_samples,
+        "seconds_per_new_image": seconds_per_new_image,
+    }
+
+
+def write_summary(path: Path, results: dict[str, list[dict[str, float | int]]]) -> None:
+    settings: dict[str, Any] = {}
+    for name, runs in results.items():
+        accuracies = [float(run["accuracy"]) for run in runs]
+        latencies = [
+            float(run["seconds_per_new_image"]) for run in runs if run["new_samples"]
+        ]
+        settings[name] = {
+            "runs": runs,
+            "accuracy_mean": statistics.mean(accuracies),
+            "accuracy_sd": (
+                statistics.pstdev(accuracies) if len(accuracies) > 1 else 0.0
+            ),
+            "latency_mean": statistics.mean(latencies) if latencies else None,
+            "latency_sd": (statistics.pstdev(latencies) if len(latencies) > 1 else 0.0),
+        }
+    path.write_text(json.dumps({"settings": settings}, indent=2), encoding="utf-8")
 
 
 def main() -> None:
     args = parse_args()
+    if args.runs < 1:
+        raise ValueError("--runs must be at least 1.")
+    if args.max_retries < 0:
+        raise ValueError("--max-retries cannot be negative.")
+
     repo_root = Path(__file__).resolve().parents[1]
     config = DATASETS[args.dataset]
-    image_to_label, labels = load_dataset(repo_root, config, args.metadata)
-    image_root = resolve_path(
-        repo_root, args.image_root or config.default_image_root
-    )
-    if not image_root.exists():
+    dataset = load_dataset(repo_root, config, args.metadata, args.image_root)
+    if not dataset.image_root.exists():
         raise FileNotFoundError(
-            f"Image root not found: {image_root}. See README.md for dataset setup."
+            f"Image root not found: {dataset.image_root}. See data/README.md for setup."
         )
 
     client = OpenAI(
         api_key=args.api_key,
         base_url=args.api_base,
         timeout=args.timeout,
-        max_retries=args.max_retries,
+        max_retries=0,
     )
-    classifier = DCIClassifier(client, args.model, args.max_workers, args.max_tokens)
-    rng = random.Random(args.seed)
-    images = sample_images(
-        image_to_label, args.samples_per_class, args.max_samples, rng
-    )
-    k_values = args.k_values or list(config.default_k_values)
-    if args.baseline:
-        k_values = [len(labels)]
-    if any(k < 2 for k in k_values):
-        raise ValueError("Every K value must be at least 2.")
+    candidate_counts = args.candidate_counts or [len(dataset.labels)]
+    b_values = args.b_values or list(config.default_b_values)
+    if any(b < 2 for b in b_values):
+        raise ValueError("Every B value must be at least 2.")
+
+    max_samples = args.max_samples
+    if max_samples is None:
+        max_samples = config.default_max_samples
 
     output_root = Path(args.output_dir) / args.dataset / args.model.replace("/", "--")
     output_root.mkdir(parents=True, exist_ok=True)
+    all_results: dict[str, list[dict[str, float | int]]] = {}
 
-    for k in k_values:
-        mode = "baseline" if args.baseline else f"k-{k}"
-        output_path = output_root / f"{mode}.jsonl"
-        completed = read_completed(output_path)
-        pending = [image for image in images if image not in completed]
-        write_manifest(
-            output_root / f"{mode}.manifest.json",
-            args,
-            repo_root,
-            k=k,
-            mode=mode,
-            num_images=len(images),
-            num_labels=len(labels),
-        )
-        start = time.perf_counter()
-        with output_path.open("a", encoding="utf-8") as handle:
-            for image in tqdm(pending, desc=f"{args.dataset} / {mode}"):
-                image_path = image_root / image
-                if not image_path.is_file():
-                    raise FileNotFoundError(f"Image not found: {image_path}")
-                prediction = classifier.classify(image_path, labels, k)
-                handle.write(
-                    json.dumps(
-                        {
-                            "image": image,
-                            "prediction": prediction,
-                            "target": image_to_label[image],
-                            "k": k,
-                        },
-                        ensure_ascii=False,
-                    )
-                    + "\n"
+    for run_index in range(1, args.runs + 1):
+        run_seed = args.seed + run_index - 1
+        for candidate_count in candidate_counts:
+            problem_rng = random.Random(f"{run_seed}:{candidate_count}")
+            image_to_label, selected_labels, images = select_candidate_problem(
+                dataset.image_to_label,
+                dataset.labels,
+                candidate_count,
+                args.samples_per_class,
+                max_samples,
+                problem_rng,
+            )
+            settings = (
+                [("baseline", candidate_count)]
+                if args.baseline
+                else [(f"b-{b}", b) for b in b_values]
+            )
+            for mode, b in settings:
+                run_root = output_root / f"n-{candidate_count}" / f"run-{run_index:02d}"
+                run_root.mkdir(parents=True, exist_ok=True)
+                output_path = run_root / f"{mode}.jsonl"
+                completed = read_completed(output_path)
+                pending = [image for image in images if image not in completed]
+                write_manifest(
+                    run_root / f"{mode}.manifest.json",
+                    args,
+                    repo_root,
+                    run_index=run_index,
+                    run_seed=run_seed,
+                    b=b,
+                    mode=mode,
+                    images=images,
+                    selected_labels=selected_labels,
+                    full_catalog_sha256=dataset.catalog_sha256,
                 )
-                handle.flush()
-        evaluate(output_path, time.perf_counter() - start, len(pending))
+                classifier = DCIClassifier(
+                    client,
+                    args.model,
+                    args.max_workers,
+                    args.max_tokens,
+                    seed=run_seed,
+                    max_retries=args.max_retries,
+                )
+                start = time.perf_counter()
+                with output_path.open("a", encoding="utf-8") as handle:
+                    for image in tqdm(
+                        pending,
+                        desc=(
+                            f"{args.dataset} / N={candidate_count} / "
+                            f"run={run_index} / {mode}"
+                        ),
+                    ):
+                        image_path = dataset.image_root / image
+                        if not image_path.is_file():
+                            raise FileNotFoundError(f"Image not found: {image_path}")
+                        prediction = classifier.classify(image_path, selected_labels, b)
+                        handle.write(
+                            json.dumps(
+                                {
+                                    "image": image,
+                                    "prediction": prediction,
+                                    "target": image_to_label[image],
+                                    "N": candidate_count,
+                                    "B": b,
+                                    "run": run_index,
+                                    "seed": run_seed,
+                                },
+                                ensure_ascii=False,
+                            )
+                            + "\n"
+                        )
+                        handle.flush()
+                metrics = evaluate(
+                    output_path,
+                    time.perf_counter() - start,
+                    len(pending),
+                )
+                key = f"n-{candidate_count}/{mode}"
+                all_results.setdefault(key, []).append(
+                    {"run": run_index, "seed": run_seed, **metrics}
+                )
+
+    write_summary(output_root / "summary.json", all_results)
 
 
 if __name__ == "__main__":

@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dci-inference"
-version = "0.1.0"
-description = "Divide-and-Conquer Inference for large-scale visual recognition with MLLMs"
+version = "0.2.0"
+description = "Divide-and-Conquer Inference for large-scale image classification with MLLMs"
 readme = "README.md"
 requires-python = ">=3.9"
 license = {file = "LICENSE"}
@@ -23,6 +23,7 @@ dev = [
 
 [project.scripts]
 dci-eval = "dci.runner:main"
+dci-index-imagenet21k = "dci.index_imagenet21k:main"
 
 [project.urls]
 Repository = "https://github.com/FourierAI/DCI"

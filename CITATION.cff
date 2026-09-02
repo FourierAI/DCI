@@ -2,8 +2,8 @@ cff-version: 1.2.0
 message: "If you use DCI in your research, please cite this software and manuscript."
 title: "Divide-and-Conquer Inference"
 type: software
-version: 0.1.0
-date-released: 2026-06-21
+version: 0.2.0
+date-released: 2026-09-02
 repository-code: "https://github.com/FourierAI/DCI"
 license: MIT
 authors:
@@ -25,7 +25,7 @@ authors:
     given-names: Qian
 preferred-citation:
   type: generic
-  title: "Divide-and-Conquer Inference for Large-Scale Visual Recognition with Multimodal Large Language Models"
+  title: "Divide-and-Conquer Inference for Large-Scale Image Classification with Multimodal Large Language Models"
   year: 2026
   authors:
     - family-names: Ye
