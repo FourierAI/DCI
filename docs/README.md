@@ -1,9 +1,14 @@
 # DCI project page
 
 This page mirrors the final manuscript title, terminology, experimental
-protocol, scoped claims, and all 13 supplied manuscript figures. Web PNGs in
+protocol, scoped claims, and all 12 current manuscript figures. Figure 12 combines
+the two qualitative $B=10$ trajectories. Web PNGs in
 `docs/assets/` are synchronized from the vector sources in
 `../assets/figures/`.
+
+Reported summary results and their provenance are available in
+[`../data/results/`](../data/results/README.md). See
+[`PAPER_ALIGNMENT.md`](PAPER_ALIGNMENT.md) for the synchronized release details.
 
 This project page is adapted from the
 [Academic Project Page Template](https://github.com/eliahuhorwitz/Academic-project-page-template),

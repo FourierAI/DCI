@@ -1,0 +1,86 @@
+{
+  "synchronized_on": "2026-09-03",
+  "source_manuscript": "DCI_ESWA_final_named.pdf",
+  "figures": [
+    {
+      "figure": 1,
+      "basename": "scaling_performance",
+      "pdf_sha256": "7015799381623e78ed6469260a8dff69baa407e412c3eb16b735971de1343afe",
+      "png_sha256": "c4925fa020b356da15ff31335531536fd130acb40d28ad045ad150c87daa1fb2"
+    },
+    {
+      "figure": 2,
+      "basename": "method",
+      "pdf_sha256": "99d9dd75655d3a482e67dbe3cb8b63cc269f72579b841eec6d1e3a41ccc1b7ea",
+      "png_sha256": "48715c6d7bf835c3da5b8274eb09d4373e09683032fe323ef521d894d0516e73"
+    },
+    {
+      "figure": 3,
+      "basename": "prompt",
+      "pdf_sha256": "6ab2b7f66d235372fca970f81306aebea6cdfd0f5ecf9504f772ba0270437dce",
+      "png_sha256": "e454dcc5842b58da0a2300fcfb8800031f7995b8dcd2de1e188696a8752f0dcd"
+    },
+    {
+      "figure": 4,
+      "basename": "dci_complexity_analysis",
+      "pdf_sha256": "c6933e8a0a728b860091ea6c27a16e4ab162178781ea4ebd2cc1cf59d9881aab",
+      "png_sha256": "869e052f0241506b17db662d13c0be3ad9413fc3b827c0112dc20035fbfcf654"
+    },
+    {
+      "figure": 5,
+      "basename": "dci_main",
+      "pdf_sha256": "e9956e34ce619906df284cf8f00799aa2465cfdd59b5d3139c64c9e5d3dbdada",
+      "png_sha256": "b855478a74969f4836e7c46d9c71fa69da6f02b956ef63689aa5cc6533ad2c46"
+    },
+    {
+      "figure": 6,
+      "basename": "dci_suppression",
+      "pdf_sha256": "d98df2091014fe25dcec841db902079629d74c88a3f0472c3c7da261efbdae17",
+      "png_sha256": "5238323cb5a4a1d704ff560012e68e77881109a6b3f862ba0cea2ee0952645c3"
+    },
+    {
+      "figure": 7,
+      "basename": "imagenet21k_dci_advantage",
+      "pdf_sha256": "c43b2f21d3f39fdcaccb5981aee8c36e3b3c0edf588fa22ad1cfde83e36cb71d",
+      "png_sha256": "1519c0ce69ee5b6d120eb71e9ebfd4dcdbc49445ba6cd2f9e992d75142b286d9"
+    },
+    {
+      "figure": 8,
+      "basename": "dci_imagenet21k_tradeoff",
+      "pdf_sha256": "8283fdc85f989d139d8ac0d5cdc93ccb82b76ab8231e95d426b05fa7b491983a",
+      "png_sha256": "1f220cc8ba73ea0da4675c2d06537a123ce4a621e253fb63b0b8efec1b65b592"
+    },
+    {
+      "figure": 9,
+      "basename": "dci_group_size_tradeoff",
+      "pdf_sha256": "cd7bcd3150121a28c020a52167be90564290c1e3df4655bf2246c6c6a3d3faf3",
+      "png_sha256": "b18389e246c85e54a30c4d2128f204edc52ceb3cc2d51c4c0b4222b688e83397"
+    },
+    {
+      "figure": 10,
+      "basename": "tts_accuracy_latency_tradeoff",
+      "pdf_sha256": "0b7dff48dd6de4c760e577c6b52832ad90e9bbbf2b74ec1b54b745e47b2bfbd1",
+      "png_sha256": "fd9a39a56e079d3fd9cf32005fce24ed4e0e05db8a9e94cfb25679dfe747e985"
+    },
+    {
+      "figure": 11,
+      "basename": "gs_ablation",
+      "pdf_sha256": "c4d2670b093f1fd220e5f7b54a06e1695d5eb9cad04164f6192ca41b66fa931c",
+      "png_sha256": "b409721d152c916396b46119c58f783bc5d726c5a88bd73b98fcaa8fe916e01a"
+    },
+    {
+      "figure": 12,
+      "basename": "dci_B10",
+      "pdf_sha256": "37871f46f36187ecca9fc660854cdc5aa464187fac4d09f4790a39ee2801181b",
+      "png_sha256": "03b6ca3fcf20d475e42aabc30247f81af7d83bf8873b5200debb5c733e23a017"
+    }
+  ],
+  "compatibility_aliases": {
+    "dci-framework": "method",
+    "conquer-prompt": "prompt",
+    "complexity-analysis": "dci_complexity_analysis",
+    "scaling-results": "dci_suppression",
+    "cub_dci": "dci_B10",
+    "food_dci": "dci_B10"
+  }
+}

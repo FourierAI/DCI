@@ -7,7 +7,7 @@
   <meta name="title" content="Divide-and-Conquer Inference">
   <meta name="description" content="A training-free test-time strategy for large-scale image classification with multimodal large language models.">
   <meta name="keywords" content="divide-and-conquer inference, multimodal large language models, image classification, test-time scaling, MLLM">
-  <meta name="author" content="Zhipeng Ye, Jiaqi Huang, Feng Jiang, Qiufeng Wang, Yikang Duan, Dawei Wang, Xihang Zhou, Qian Qiao">
+  <meta name="author" content="Zhipeng Ye, Jiaqi Huang, Feng Jiang, Qiufeng Wang, Yikang Duan, Dawei Wang, Kaixin Liu, Hao Li">
   <meta name="robots" content="index, follow">
 
   <meta property="og:type" content="article">
@@ -30,8 +30,8 @@
   <meta name="citation_author" content="Wang, Qiufeng">
   <meta name="citation_author" content="Duan, Yikang">
   <meta name="citation_author" content="Wang, Dawei">
-  <meta name="citation_author" content="Zhou, Xihang">
-  <meta name="citation_author" content="Qiao, Qian">
+  <meta name="citation_author" content="Liu, Kaixin">
+  <meta name="citation_author" content="Li, Hao">
   <meta name="citation_publication_date" content="2026">
 
   <meta name="theme-color" content="#2563eb">
@@ -58,8 +58,8 @@
       {"@type": "Person", "name": "Qiufeng Wang"},
       {"@type": "Person", "name": "Yikang Duan"},
       {"@type": "Person", "name": "Dawei Wang"},
-      {"@type": "Person", "name": "Xihang Zhou"},
-      {"@type": "Person", "name": "Qian Qiao"}
+      {"@type": "Person", "name": "Kaixin Liu"},
+      {"@type": "Person", "name": "Hao Li"}
     ],
     "datePublished": "2026",
     "url": "https://fourierai.github.io/DCI/",
@@ -86,14 +86,21 @@
               </h1>
 
               <div class="is-size-5 publication-authors">
-                <span class="author-block">Zhipeng Ye,</span>
-                <span class="author-block">Jiaqi Huang,</span>
-                <span class="author-block">Feng Jiang,</span>
-                <span class="author-block">Qiufeng Wang,</span>
-                <span class="author-block">Yikang Duan,</span>
-                <span class="author-block">Dawei Wang,</span>
-                <span class="author-block">Xihang Zhou,</span>
-                <span class="author-block">Qian Qiao</span>
+                <span class="author-block">Zhipeng Ye<sup>1</sup>,</span>
+                <span class="author-block">Jiaqi Huang<sup>1,2</sup>,</span>
+                <span class="author-block">Feng Jiang<sup>1,*</sup>,</span>
+                <span class="author-block">Qiufeng Wang<sup>2</sup>,</span>
+                <span class="author-block">Yikang Duan<sup>2</sup>,</span>
+                <span class="author-block">Dawei Wang<sup>1</sup>,</span>
+                <span class="author-block">Kaixin Liu<sup>1</sup>,</span>
+                <span class="author-block">Hao Li<sup>3</sup></span>
+              </div>
+              <div class="content is-size-6">
+                <p><sup>1</sup> Taizhou Institute of Science and Technology, Nanjing University of Science and Technology, China<br>
+                <sup>2</sup> Department of Intelligent Science, Xi’an Jiaotong-Liverpool University, China<br>
+                <sup>3</sup> Department of Computer Science, University of Arizona, USA</p>
+                <p><sup>*</sup> Corresponding author: <a href="mailto:jf@nustti.edu.cn">Feng Jiang</a><br>
+                Jiaqi Huang: <a href="mailto:Jiaqi.Huang26@student.xjtlu.edu.cn">Jiaqi.Huang26@student.xjtlu.edu.cn</a></p>
               </div>
 
               <div class="publication-tagline">
@@ -113,6 +120,13 @@
                      class="external-link button is-normal is-rounded is-dark">
                     <span class="icon"><i class="fas fa-terminal" aria-hidden="true"></i></span>
                     <span>Reproduce</span>
+                  </a>
+                </span>
+                <span class="link-block">
+                  <a href="https://github.com/FourierAI/DCI/tree/master/data/results" target="_blank" rel="noopener"
+                     class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon"><i class="fas fa-table" aria-hidden="true"></i></span>
+                    <span>Reported Data</span>
                   </a>
                 </span>
                 <span class="link-block">
@@ -149,7 +163,7 @@
           <p>
             Mean MLLM classification accuracy generally decreases as the candidate
             label set grows. <strong>DCI randomly partitions the candidate space,
-            solves same-level groups in parallel, retains non-null predictions, and
+            solves same-level groups in parallel, filters None and invalid responses, and
             recursively prunes the search space without training.</strong>
           </p>
         </div>
@@ -219,7 +233,7 @@
           <div class="column">
             <article class="method-card">
               <span>3</span><h3>Combine</h3>
-              <p>Keep one valid prediction per group and prune branches that return <code>None</code>.</p>
+              <p>Validate complete category names; keep at most one local label and filter <code>None</code> and invalid responses.</p>
             </article>
           </div>
           <div class="column">
@@ -233,8 +247,10 @@
         <figure class="research-figure">
           <img src="assets/prompt.png" alt="Structured prompt used in the DCI conquer phase" loading="lazy">
           <figcaption>
-            <strong>Conquer-phase prompt.</strong> A response is valid only when it
-            contains exactly one listed label; zero or multiple matches are null.
+            <strong>Conquer-phase prompt.</strong> After fixed-wrapper normalization,
+            a complete output label must belong to the current group. <code>None</code>
+            and invalid responses are filtered. Flat uses a separate closed-set prompt;
+            DCI retains its <code>None</code>-enabled prompt at every level.
           </figcaption>
         </figure>
       </div>
@@ -265,6 +281,7 @@
           <figcaption>
             Candidate-set scaling on ImageNet-1K. At <i>N</i> = 1000, all six models
             improve; the largest reported gain is +18.54 pp for DeepSeek-VL-7B-chat.
+            At <i>N</i> = <i>B</i> = 10, the six-model mean gain is −1.05 pp.
           </figcaption>
         </figure>
 
@@ -275,6 +292,12 @@
             open-source models and API-served models, reported over five runs.
           </figcaption>
         </figure>
+        <p class="has-text-centered">
+          Current summary workbooks and machine-readable values:
+          <a href="https://github.com/FourierAI/DCI/tree/master/data/results">2026-09-03 reported-results release</a>.
+          Means and SDs are copied from the reporting workbooks with their correction history;
+          original five-run prediction logs are unavailable.
+        </p>
       </div>
     </section>
 
@@ -338,17 +361,14 @@
           <div class="column is-four-fifths">
             <h2 class="title is-3">Candidate-Pruning Trajectories</h2>
             <p class="section-lead">
-              Two representative examples using Qwen3-VL-2B-Instruct with <i>B</i> = 5.
+              Two representative examples using Qwen3-VL-2B-Instruct with <i>B</i> = 10.
             </p>
           </div>
         </div>
         <figure class="research-figure wide-scroll-figure">
-          <img src="assets/cub_dci.png" alt="CUB-200-2011 candidate-pruning trajectory" loading="lazy">
-          <figcaption>DCI changes the flat prediction to the correct Sooty Albatross class.</figcaption>
-        </figure>
-        <figure class="research-figure wide-scroll-figure">
-          <img src="assets/food_dci.png" alt="Food-101 candidate-pruning trajectory" loading="lazy">
-          <figcaption>DCI removes Caesar salad and selects the correct beet salad class.</figcaption>
+          <img src="assets/dci_B10.png" alt="Combined Figure 12: B=10 candidate-pruning trajectories on CUB-200-2011 and Food-101" loading="lazy">
+          <figcaption>Figure 12. CUB-200-2011: 200 → 19 → 2 → 1 candidates, ending at Sooty Albatross.
+            Food-101: 101 → 5 → 1 candidates, ending at beet salad. Both trajectories retain the correct label.</figcaption>
         </figure>
       </div>
     </section>
@@ -407,7 +427,7 @@ dci-eval \
             <h2 class="title is-3 has-text-centered">Scope and Limitations</h2>
             <p>
               Candidate interference and limited long-context utilization are plausible
-              contributors to the observed degradation, not proven mechanisms. DCI can
+              contributors to the observed degradation. DCI can
               introduce extra latency on smaller label spaces, and its value depends on
               the deployment budget. The strongest latency claim is limited to selected
               full-vocabulary ImageNet-21K configurations on the reported hardware.
@@ -428,7 +448,7 @@ dci-eval \
         </div>
         <pre><code id="bibtex-code">@misc{ye2026dci,
   title  = {Divide-and-Conquer Inference for Large-Scale Image Classification with Multimodal Large Language Models},
-  author = {Zhipeng Ye and Jiaqi Huang and Feng Jiang and Qiufeng Wang and Yikang Duan and Dawei Wang and Xihang Zhou and Qian Qiao},
+  author = {Zhipeng Ye and Jiaqi Huang and Feng Jiang and Qiufeng Wang and Yikang Duan and Dawei Wang and Kaixin Liu and Hao Li},
   year   = {2026},
   note   = {Manuscript under review; source code available at \url{https://github.com/FourierAI/DCI}}
 }</code></pre>

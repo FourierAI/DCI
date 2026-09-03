@@ -1,0 +1,350 @@
+{
+  "schema_version": 1,
+  "image": "1078947.jpg",
+  "true_label": "beet_salad",
+  "started_at": "2026-09-02T23:47:41+08:00",
+  "config": {
+    "model": "Qwen3-VL-2B-Instruct",
+    "k": 10,
+    "initial_label_count": 101,
+    "temperature": null,
+    "top_p": null
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "input_labels": [
+        "apple_pie",
+        "baby_back_ribs",
+        "baklava",
+        "beef_carpaccio",
+        "beef_tartare",
+        "beet_salad",
+        "beignets",
+        "bibimbap",
+        "bread_pudding",
+        "breakfast_burrito",
+        "bruschetta",
+        "caesar_salad",
+        "cannoli",
+        "caprese_salad",
+        "carrot_cake",
+        "ceviche",
+        "cheese_plate",
+        "cheesecake",
+        "chicken_curry",
+        "chicken_quesadilla",
+        "chicken_wings",
+        "chocolate_cake",
+        "chocolate_mousse",
+        "churros",
+        "clam_chowder",
+        "club_sandwich",
+        "crab_cakes",
+        "creme_brulee",
+        "croque_madame",
+        "cup_cakes",
+        "deviled_eggs",
+        "donuts",
+        "dumplings",
+        "edamame",
+        "eggs_benedict",
+        "escargots",
+        "falafel",
+        "filet_mignon",
+        "fish_and_chips",
+        "foie_gras",
+        "french_fries",
+        "french_onion_soup",
+        "french_toast",
+        "fried_calamari",
+        "fried_rice",
+        "frozen_yogurt",
+        "garlic_bread",
+        "gnocchi",
+        "greek_salad",
+        "grilled_cheese_sandwich",
+        "grilled_salmon",
+        "guacamole",
+        "gyoza",
+        "hamburger",
+        "hot_and_sour_soup",
+        "hot_dog",
+        "huevos_rancheros",
+        "hummus",
+        "ice_cream",
+        "lasagna",
+        "lobster_bisque",
+        "lobster_roll_sandwich",
+        "macaroni_and_cheese",
+        "macarons",
+        "miso_soup",
+        "mussels",
+        "nachos",
+        "omelette",
+        "onion_rings",
+        "oysters",
+        "pad_thai",
+        "paella",
+        "pancakes",
+        "panna_cotta",
+        "peking_duck",
+        "pho",
+        "pizza",
+        "pork_chop",
+        "poutine",
+        "prime_rib",
+        "pulled_pork_sandwich",
+        "ramen",
+        "ravioli",
+        "red_velvet_cake",
+        "risotto",
+        "samosa",
+        "sashimi",
+        "scallops",
+        "seaweed_salad",
+        "shrimp_and_grits",
+        "spaghetti_bolognese",
+        "spaghetti_carbonara",
+        "spring_rolls",
+        "steak",
+        "strawberry_shortcake",
+        "sushi",
+        "tacos",
+        "takoyaki",
+        "tiramisu",
+        "tuna_tartare",
+        "waffles"
+      ],
+      "groups": [
+        {
+          "group_index": 0,
+          "candidate_labels": [
+            "apple_pie",
+            "baby_back_ribs",
+            "baklava",
+            "beef_carpaccio",
+            "beef_tartare",
+            "beet_salad",
+            "beignets",
+            "bibimbap",
+            "bread_pudding",
+            "breakfast_burrito"
+          ],
+          "raw_response": "beet_salad",
+          "selected_label": "beet_salad",
+          "status": "selected"
+        },
+        {
+          "group_index": 1,
+          "candidate_labels": [
+            "bruschetta",
+            "caesar_salad",
+            "cannoli",
+            "caprese_salad",
+            "carrot_cake",
+            "ceviche",
+            "cheese_plate",
+            "cheesecake",
+            "chicken_curry",
+            "chicken_quesadilla"
+          ],
+          "raw_response": "caesar_salad",
+          "selected_label": "caesar_salad",
+          "status": "selected"
+        },
+        {
+          "group_index": 2,
+          "candidate_labels": [
+            "chicken_wings",
+            "chocolate_cake",
+            "chocolate_mousse",
+            "churros",
+            "clam_chowder",
+            "club_sandwich",
+            "crab_cakes",
+            "creme_brulee",
+            "croque_madame",
+            "cup_cakes"
+          ],
+          "raw_response": "salad",
+          "selected_label": null,
+          "status": "invalid_response"
+        },
+        {
+          "group_index": 3,
+          "candidate_labels": [
+            "deviled_eggs",
+            "donuts",
+            "dumplings",
+            "edamame",
+            "eggs_benedict",
+            "escargots",
+            "falafel",
+            "filet_mignon",
+            "fish_and_chips",
+            "foie_gras"
+          ],
+          "raw_response": "None",
+          "selected_label": null,
+          "status": "none"
+        },
+        {
+          "group_index": 4,
+          "candidate_labels": [
+            "french_fries",
+            "french_onion_soup",
+            "french_toast",
+            "fried_calamari",
+            "fried_rice",
+            "frozen_yogurt",
+            "garlic_bread",
+            "gnocchi",
+            "greek_salad",
+            "grilled_cheese_sandwich"
+          ],
+          "raw_response": "Greek_salad",
+          "selected_label": "greek_salad",
+          "status": "selected_case_normalized"
+        },
+        {
+          "group_index": 5,
+          "candidate_labels": [
+            "grilled_salmon",
+            "guacamole",
+            "gyoza",
+            "hamburger",
+            "hot_and_sour_soup",
+            "hot_dog",
+            "huevos_rancheros",
+            "hummus",
+            "ice_cream",
+            "lasagna"
+          ],
+          "raw_response": "hummus",
+          "selected_label": "hummus",
+          "status": "selected"
+        },
+        {
+          "group_index": 6,
+          "candidate_labels": [
+            "lobster_bisque",
+            "lobster_roll_sandwich",
+            "macaroni_and_cheese",
+            "macarons",
+            "miso_soup",
+            "mussels",
+            "nachos",
+            "omelette",
+            "onion_rings",
+            "oysters"
+          ],
+          "raw_response": "None",
+          "selected_label": null,
+          "status": "none"
+        },
+        {
+          "group_index": 7,
+          "candidate_labels": [
+            "pad_thai",
+            "paella",
+            "pancakes",
+            "panna_cotta",
+            "peking_duck",
+            "pho",
+            "pizza",
+            "pork_chop",
+            "poutine",
+            "prime_rib"
+          ],
+          "raw_response": "None",
+          "selected_label": null,
+          "status": "none"
+        },
+        {
+          "group_index": 8,
+          "candidate_labels": [
+            "pulled_pork_sandwich",
+            "ramen",
+            "ravioli",
+            "red_velvet_cake",
+            "risotto",
+            "samosa",
+            "sashimi",
+            "scallops",
+            "seaweed_salad",
+            "shrimp_and_grits"
+          ],
+          "raw_response": "seaweed_salad",
+          "selected_label": "seaweed_salad",
+          "status": "selected"
+        },
+        {
+          "group_index": 9,
+          "candidate_labels": [
+            "spaghetti_bolognese",
+            "spaghetti_carbonara",
+            "spring_rolls",
+            "steak",
+            "strawberry_shortcake",
+            "sushi",
+            "tacos",
+            "takoyaki",
+            "tiramisu",
+            "tuna_tartare"
+          ],
+          "raw_response": "None",
+          "selected_label": null,
+          "status": "none"
+        },
+        {
+          "group_index": 10,
+          "candidate_labels": [
+            "waffles"
+          ],
+          "raw_response": "None",
+          "selected_label": null,
+          "status": "none"
+        }
+      ],
+      "output_labels": [
+        "beet_salad",
+        "caesar_salad",
+        "greek_salad",
+        "hummus",
+        "seaweed_salad"
+      ]
+    },
+    {
+      "round": 2,
+      "input_labels": [
+        "beet_salad",
+        "caesar_salad",
+        "greek_salad",
+        "hummus",
+        "seaweed_salad"
+      ],
+      "groups": [
+        {
+          "group_index": 0,
+          "candidate_labels": [
+            "beet_salad",
+            "caesar_salad",
+            "greek_salad",
+            "hummus",
+            "seaweed_salad"
+          ],
+          "raw_response": "beet_salad",
+          "selected_label": "beet_salad",
+          "status": "selected"
+        }
+      ],
+      "output_labels": [
+        "beet_salad"
+      ]
+    }
+  ],
+  "final_label": "beet_salad",
+  "stop_reason": "final_group_classified",
+  "release_note": "Single illustrative trace, not a five-run benchmark log. Only the private image-directory prefix was removed for publication."
+}

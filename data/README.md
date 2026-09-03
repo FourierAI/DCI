@@ -4,6 +4,10 @@ The repository contains label catalogs and lightweight evaluation metadata, but
 does not redistribute dataset images. Obtain every dataset from its official
 source and follow its license.
 
+Current manuscript summary data are in [`results/`](results/README.md). Dataset
+catalogs here describe evaluation inputs; they are separate from experimental
+prediction logs and from the reported aggregate results.
+
 | Dataset | Official source | Paper split |
 |:--|:--|:--|
 | CIFAR-100 | <https://www.cs.toronto.edu/~kriz/cifar.html> | complete 10,000-image test split |

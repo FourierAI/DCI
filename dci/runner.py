@@ -8,7 +8,6 @@ import mimetypes
 import os
 import platform
 import random
-import re
 import statistics
 import subprocess
 import sys
@@ -23,22 +22,11 @@ from openai import APIError, OpenAI
 from tqdm import tqdm
 
 from .configs import DATASETS, DatasetConfig, resolve_path
+from .prompts import DCI_PROMPT, FLAT_PROMPT, build_prompt
+from .validation import VALIDATION_VERSION, validate_prediction
 
-PROMPT = """Please directly identify the category name of the image from the candidate list.
-Always choose the most likely category whenever possible; output 'None' only if the
-image clearly does not belong to any category
-in the list. Do not output sentences or explanations; output only the category
-name exactly as listed (preserve case and singular/plural form).
-
-Example:
-Q: There are 3 categories, [Leopards, wild_cat, electric_guitar].
-Which category does the image belong to?
-A: wild_cat
-
-Now answer:
-Q: There are {count} categories, [{labels}].
-Which category does the image belong to?
-A:"""
+# Compatibility alias for callers that previously imported the DCI template.
+PROMPT = DCI_PROMPT
 
 IMAGE_SUFFIXES = {
     ".bmp",
@@ -125,6 +113,24 @@ def parse_args() -> argparse.Namespace:
         "--max-tokens",
         type=int,
         help="Optional response-token cap; omitted to retain the model setting.",
+    )
+    parser.add_argument(
+        "--temperature", type=float, help="Omit to retain the serving default."
+    )
+    parser.add_argument(
+        "--top-p", type=float, help="Omit to retain the serving default."
+    )
+    parser.add_argument(
+        "--sd-ddof",
+        type=int,
+        choices=(0, 1),
+        default=0,
+        help="Run-level SD denominator: runs-ddof; recorded in summary.json.",
+    )
+    parser.add_argument(
+        "--save-traces",
+        action="store_true",
+        help="Include group candidates, raw responses and validation outcomes in JSONL.",
     )
     return parser.parse_args()
 
@@ -420,6 +426,8 @@ class DCIClassifier:
         max_tokens: int | None,
         seed: int = 0,
         max_retries: int = 5,
+        temperature: float | None = None,
+        top_p: float | None = None,
     ) -> None:
         self.client = client
         self.model = model
@@ -427,6 +435,9 @@ class DCIClassifier:
         self.max_tokens = max_tokens
         self.seed = seed
         self.max_retries = max_retries
+        self.temperature = temperature
+        self.top_p = top_p
+        self.last_trace: list[dict[str, Any]] = []
 
     @staticmethod
     def encode_image(image_path: Path) -> str:
@@ -437,8 +448,10 @@ class DCIClassifier:
             encoded = base64.b64encode(handle.read()).decode("utf-8")
         return f"data:{mime_type};base64,{encoded}"
 
-    def query(self, image_data_url: str, labels: list[str]) -> str:
-        prompt = PROMPT.format(count=len(labels), labels=", ".join(labels))
+    def query(
+        self, image_data_url: str, labels: list[str], *, flat: bool = False
+    ) -> str:
+        prompt = build_prompt(labels, flat=flat)
         retries = 0
         while True:
             try:
@@ -459,6 +472,10 @@ class DCIClassifier:
                 }
                 if self.max_tokens is not None:
                     request["max_tokens"] = self.max_tokens
+                if self.temperature is not None:
+                    request["temperature"] = self.temperature
+                if self.top_p is not None:
+                    request["top_p"] = self.top_p
                 response = self.client.chat.completions.create(**request)
                 return (response.choices[0].message.content or "").strip()
             except APIError:
@@ -480,30 +497,38 @@ class DCIClassifier:
 
     @staticmethod
     def normalize_prediction(prediction: str, candidates: list[str]) -> str | None:
-        cleaned = prediction.strip().strip("`\"'. ")
-        if re.search(r"(?<!\w)None(?!\w)", prediction, flags=re.IGNORECASE):
-            return None
-        exact = {label.casefold(): label for label in candidates}
-        if cleaned.casefold() in exact:
-            return exact[cleaned.casefold()]
+        return validate_prediction(prediction, candidates).label
 
-        matches: list[tuple[int, int, str]] = []
-        for label in sorted(candidates, key=len, reverse=True):
-            pattern = rf"(?<!\w){re.escape(label)}(?!\w)"
-            for match in re.finditer(pattern, prediction, flags=re.IGNORECASE):
-                matches.append((match.start(), match.end(), label))
-        filtered = [
-            match
-            for match in matches
-            if not any(
-                other[0] <= match[0]
-                and other[1] >= match[1]
-                and (other[1] - other[0]) > (match[1] - match[0])
-                for other in matches
-            )
+    def _record_level(self, groups: list[list[str]], raw: list[str]) -> list[str]:
+        outcomes = [
+            validate_prediction(response, group) for group, response in zip(groups, raw)
         ]
-        unique = {label for _, _, label in filtered}
-        return next(iter(unique)) if len(unique) == 1 else None
+        survivors = [item.label for item in outcomes if item.label is not None]
+        self.last_trace.append(
+            {
+                "level": len(self.last_trace) + 1,
+                "input_count": sum(map(len, groups)),
+                "output_count": len(survivors),
+                "groups": [
+                    {
+                        "candidates": group,
+                        "response": response,
+                        "prediction": item.label,
+                        "status": item.status,
+                    }
+                    for group, response, item in zip(groups, raw, outcomes)
+                ],
+            }
+        )
+        return survivors
+
+    def classify_flat(self, image_path: Path, labels: list[str]) -> str | None:
+        self.last_trace = []
+        if not labels:
+            raise ValueError("Flat inference requires a nonempty candidate list.")
+        raw = self.query(self.encode_image(image_path), labels, flat=True)
+        survivors = self._record_level([labels], [raw])
+        return survivors[0] if survivors else None
 
     def _image_rng(self, image_path: Path) -> random.Random:
         payload = f"{self.seed}\0{image_path.as_posix()}".encode()
@@ -513,6 +538,9 @@ class DCIClassifier:
     def classify(self, image_path: Path, labels: list[str], b: int) -> str | None:
         if b < 2:
             raise ValueError("B must be at least 2.")
+        self.last_trace = []
+        if len(labels) <= 1:
+            return labels[0] if labels else None
         image_data_url = self.encode_image(image_path)
         active = labels[:]
         rng = self._image_rng(image_path)
@@ -523,9 +551,10 @@ class DCIClassifier:
             if len(active) == 1:
                 return active[0]
             if len(active) <= b:
-                return self.normalize_prediction(
-                    self.query(image_data_url, active), active
+                survivors = self._record_level(
+                    [active], [self.query(image_data_url, active)]
                 )
+                return survivors[0] if survivors else None
 
             groups = self.groups(active, b, rng)
             with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
@@ -534,12 +563,7 @@ class DCIClassifier:
                         lambda group: self.query(image_data_url, group), groups
                     )
                 )
-            active = [
-                normalized
-                for prediction, group in zip(raw, groups)
-                if (normalized := self.normalize_prediction(prediction, group))
-                is not None
-            ]
+            active = self._record_level(groups, raw)
 
 
 def read_completed(path: Path) -> set[str]:
@@ -603,14 +627,50 @@ def write_manifest(
         "evaluation_images": images,
         "candidate_labels": selected_labels,
         "full_catalog_sha256": full_catalog_sha256,
-        "prompt_sha256": hashlib.sha256(PROMPT.encode("utf-8")).hexdigest(),
+        "prompt_sha256": hashlib.sha256(
+            (FLAT_PROMPT if mode == "baseline" else DCI_PROMPT).encode("utf-8")
+        ).hexdigest(),
+        "validation_version": VALIDATION_VERSION,
+        "decoding": {
+            key: getattr(args, key, None)
+            for key in ("max_tokens", "temperature", "top_p")
+        },
         "arguments": arguments,
     }
+    records_path = path.with_name(path.name.removesuffix(".manifest.json") + ".jsonl")
+    if records_path.exists() and records_path.stat().st_size:
+        if not path.exists():
+            raise ValueError(
+                "Existing predictions have no manifest; use a new --output-dir."
+            )
+        previous = json.loads(path.read_text(encoding="utf-8"))
+        keys = (
+            "mode",
+            "run_index",
+            "run_seed",
+            "B",
+            "evaluation_images",
+            "candidate_labels",
+            "full_catalog_sha256",
+            "prompt_sha256",
+            "validation_version",
+            "decoding",
+        )
+        changed = [key for key in keys if previous.get(key) != payload[key]]
+        for key in ("model", "api_base", "max_workers", "save_traces"):
+            if previous.get("arguments", {}).get(key) != arguments.get(key):
+                changed.append(key)
+        if changed:
+            raise ValueError(
+                f"Cannot mix existing predictions with changed settings ({', '.join(changed)}); use a new --output-dir."
+            )
+        return
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
-def evaluate(path: Path, elapsed: float, new_samples: int) -> dict[str, float | int]:
+def evaluate(path: Path, elapsed: float, new_samples: int) -> dict[str, float | int | None]:
     total = correct = 0
+    image_latencies = []
     with path.open(encoding="utf-8") as handle:
         for line in handle:
             try:
@@ -619,6 +679,8 @@ def evaluate(path: Path, elapsed: float, new_samples: int) -> dict[str, float | 
                 continue
             total += 1
             correct += row["prediction"] == row["target"]
+            if "latency_seconds" in row:
+                image_latencies.append(row["latency_seconds"])
     accuracy = 100 * correct / total if total else 0.0
     seconds_per_new_image = elapsed / new_samples if new_samples else 0.0
     report = (
@@ -638,24 +700,39 @@ def evaluate(path: Path, elapsed: float, new_samples: int) -> dict[str, float | 
         "elapsed_seconds": elapsed,
         "new_samples": new_samples,
         "seconds_per_new_image": seconds_per_new_image,
+        "latency_mean": statistics.mean(image_latencies)
+        if image_latencies and len(image_latencies) == total
+        else None,
     }
 
 
-def write_summary(path: Path, results: dict[str, list[dict[str, float | int]]]) -> None:
+def write_summary(
+    path: Path, results: dict[str, list[dict[str, float | int | None]]], *, ddof: int = 0
+) -> None:
+    if ddof not in (0, 1):
+        raise ValueError("ddof must be 0 or 1.")
+
+    def sd(values):
+        if len(values) <= ddof:
+            return None
+        return statistics.stdev(values) if ddof else statistics.pstdev(values)
+
     settings: dict[str, Any] = {}
     for name, runs in results.items():
         accuracies = [float(run["accuracy"]) for run in runs]
         latencies = [
-            float(run["seconds_per_new_image"]) for run in runs if run["new_samples"]
+            float(run["latency_mean"])
+            for run in runs
+            if run.get("latency_mean") is not None
         ]
         settings[name] = {
             "runs": runs,
             "accuracy_mean": statistics.mean(accuracies),
-            "accuracy_sd": (
-                statistics.pstdev(accuracies) if len(accuracies) > 1 else 0.0
-            ),
+            "accuracy_sd": sd(accuracies),
             "latency_mean": statistics.mean(latencies) if latencies else None,
-            "latency_sd": (statistics.pstdev(latencies) if len(latencies) > 1 else 0.0),
+            "latency_sd": sd(latencies),
+            "latency_run_count": len(latencies),
+            "sd_ddof": ddof,
         }
     path.write_text(json.dumps({"settings": settings}, indent=2), encoding="utf-8")
 
@@ -666,6 +743,12 @@ def main() -> None:
         raise ValueError("--runs must be at least 1.")
     if args.max_retries < 0:
         raise ValueError("--max-retries cannot be negative.")
+    if args.max_workers < 1:
+        raise ValueError("--max-workers must be at least 1.")
+    if args.top_p is not None and not 0 < args.top_p <= 1:
+        raise ValueError("--top-p must be in (0, 1].")
+    if args.temperature is not None and args.temperature < 0:
+        raise ValueError("--temperature cannot be negative.")
 
     repo_root = Path(__file__).resolve().parents[1]
     config = DATASETS[args.dataset]
@@ -692,7 +775,7 @@ def main() -> None:
 
     output_root = Path(args.output_dir) / args.dataset / args.model.replace("/", "--")
     output_root.mkdir(parents=True, exist_ok=True)
-    all_results: dict[str, list[dict[str, float | int]]] = {}
+    all_results: dict[str, list[dict[str, float | int | None]]] = {}
 
     for run_index in range(1, args.runs + 1):
         run_seed = args.seed + run_index - 1
@@ -736,6 +819,8 @@ def main() -> None:
                     args.max_tokens,
                     seed=run_seed,
                     max_retries=args.max_retries,
+                    temperature=args.temperature,
+                    top_p=args.top_p,
                 )
                 start = time.perf_counter()
                 with output_path.open("a", encoding="utf-8") as handle:
@@ -749,18 +834,32 @@ def main() -> None:
                         image_path = dataset.image_root / image
                         if not image_path.is_file():
                             raise FileNotFoundError(f"Image not found: {image_path}")
-                        prediction = classifier.classify(image_path, selected_labels, b)
+                        image_start = time.perf_counter()
+                        prediction = (
+                            classifier.classify_flat(image_path, selected_labels)
+                            if args.baseline
+                            else classifier.classify(image_path, selected_labels, b)
+                        )
+                        image_latency = time.perf_counter() - image_start
+                        row = {
+                            "image": image,
+                            "prediction": prediction,
+                            "target": image_to_label[image],
+                            "N": candidate_count,
+                            "B": b,
+                            "mode": mode,
+                            "run": run_index,
+                            "seed": run_seed,
+                            "latency_seconds": image_latency,
+                            "call_count": sum(
+                                len(level["groups"]) for level in classifier.last_trace
+                            ),
+                        }
+                        if args.save_traces:
+                            row["trace"] = classifier.last_trace
                         handle.write(
                             json.dumps(
-                                {
-                                    "image": image,
-                                    "prediction": prediction,
-                                    "target": image_to_label[image],
-                                    "N": candidate_count,
-                                    "B": b,
-                                    "run": run_index,
-                                    "seed": run_seed,
-                                },
+                                row,
                                 ensure_ascii=False,
                             )
                             + "\n"
@@ -776,7 +875,7 @@ def main() -> None:
                     {"run": run_index, "seed": run_seed, **metrics}
                 )
 
-    write_summary(output_root / "summary.json", all_results)
+    write_summary(output_root / "summary.json", all_results, ddof=args.sd_ddof)
 
 
 if __name__ == "__main__":

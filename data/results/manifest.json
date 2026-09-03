@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "synchronized_on": "2026-09-03",
+  "files": [
+    {
+      "path": "workbooks/DCI数据整理汇总.xlsx",
+      "sha256": "35bf5ddd018dfd2ec75f195dac9a54e0225c203baeeb904c673818a8c4987102",
+      "bytes": 48272
+    },
+    {
+      "path": "workbooks/主图.xlsx",
+      "sha256": "c9a818430f7e76c9b88c925dac903acd2e215fafc68eae2dbdea95b38f29d6f4",
+      "bytes": 16173
+    },
+    {
+      "path": "workbooks/scaling_performance_data.xlsx",
+      "sha256": "e775da150f452fb5fa7cd1cb156a9939cb8a530a5c8241249717901b932d1e54",
+      "bytes": 21008,
+      "source_sha256": "ec53498e25717bd058f21bf80572cb0ca61c75a9e54b2d72eacd0111ff5f093e",
+      "sanitization": {
+        "changes": [
+          {
+            "sheet": "README",
+            "row": 1,
+            "column": 1,
+            "filename": "pltb.py"
+          }
+        ],
+        "note": "Private source-directory paths replaced by original asset filenames; every other cell value checked unchanged."
+      }
+    },
+    {
+      "path": "workbooks/dci抑制下降.xlsx",
+      "sha256": "057f9b295e23e72a8af65426ed489e771f0c54f23889e779692c0fdc18ef117f",
+      "bytes": 35398
+    },
+    {
+      "path": "workbooks/imagenet21k_dci_主要.xlsx",
+      "sha256": "0de015f290d4ec97efe193887ea106b84fad68b7c530c4eb1d14acbaeb1d292b",
+      "bytes": 10839
+    },
+    {
+      "path": "workbooks/imagenet21k_gs消融.xlsx",
+      "sha256": "f4ca315f405b4afed99f98e36565f9a0054779f7aa4bc10a22800d9b8a5c8c26",
+      "bytes": 13875
+    },
+    {
+      "path": "workbooks/gs_消融.xlsx",
+      "sha256": "a5822f30f68d1dd0d7d3f39ecee15160764817cbe10738422c1be1200030c8ee",
+      "bytes": 11983
+    },
+    {
+      "path": "workbooks/tts对比.xlsx",
+      "sha256": "221d00b54678a187c0fe66fd8ca8d9c0fdf0fbe4a686142da7dcf1bfebef65da",
+      "bytes": 15040
+    },
+    {
+      "path": "workbooks/分组策略.xlsx",
+      "sha256": "a9565db9159c1e750a3aa2d5f579c3b4a4b38a45978a4eaf77154f61c2df32dc",
+      "bytes": 9674
+    },
+    {
+      "path": "reported_results.json",
+      "sha256": "d51335177a6b756578f12b897b2be9d86e5e957228a9018ac0a2770d1acb8838"
+    },
+    {
+      "path": "qualitative/food101_B10.json",
+      "source_sha256": "34dcba69dce9285e4c7a0fe6abf6de304de0731669367de82687456e2fca41fb",
+      "sha256": "2e4183fbc1e56e48cf52db9c8baac22df9bcd0b0d5ef31aca308d6702a28171b"
+    },
+    {
+      "path": "qualitative/cub200_B10.json",
+      "source_sha256": "8485902d9d44fce49d22f619d1959c3383e4e27d18ef752cbb1e17d6aeb6bfd9",
+      "sha256": "ff2c1789d0a7f15238abe6ae2f8688758c97ea82cbc90a8049baa984f68b6b20"
+    }
+  ]
+}

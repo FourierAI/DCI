@@ -10,12 +10,19 @@
 [![Python](https://img.shields.io/badge/Python-3.9%2B-3776ab?logo=python&logoColor=white)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Zhipeng Ye · Jiaqi Huang · Feng Jiang · Qiufeng Wang · Yikang Duan · Dawei Wang · Xihang Zhou · Qian Qiao**
+**Zhipeng Ye<sup>1</sup> · Jiaqi Huang<sup>1,2</sup> · Feng Jiang<sup>1,*</sup> · Qiufeng Wang<sup>2</sup> · Yikang Duan<sup>2</sup> · Dawei Wang<sup>1</sup> · Kaixin Liu<sup>1</sup> · Hao Li<sup>3</sup>**
+
+<sup>1</sup> Taizhou Institute of Science and Technology, Nanjing University of Science and Technology, China<br>
+<sup>2</sup> Department of Intelligent Science, Xi’an Jiaotong-Liverpool University, China<br>
+<sup>3</sup> Department of Computer Science, University of Arizona, USA<br>
+<sup>*</sup> Corresponding author: Feng Jiang · jf@nustti.edu.cn<br>
+Jiaqi Huang: Jiaqi.Huang26@student.xjtlu.edu.cn
 
 [Project Page](https://fourierai.github.io/DCI/) ·
 [Method](#method) ·
 [Reproduction](#paper-protocol) ·
 [Results](#results) ·
+[Reported data](data/results/README.md) ·
 [Paper alignment](docs/PAPER_ALIGNMENT.md) ·
 [Citation](#citation)
 
@@ -30,7 +37,7 @@ from a growing list of labels, its mean accuracy generally decreases. The paper
 calls this empirical pattern **candidate-space performance degradation**. All
 evaluated prompts remain within their models' context windows, so truncation
 does not explain the reported trend. Candidate interference and limited
-long-context utilization are plausible contributors, not established causes.
+long-context utilization are plausible contributors to the observed difficulty.
 
 **Divide-and-Conquer Inference (DCI)** is a training-free test-time strategy for
 this setting. It replaces one monolithic decision with recursively smaller local
@@ -49,8 +56,8 @@ size $B$:
    at most $B$ labels.
 2. **Conquer:** query the same MLLM independently for every group. The shared
    prompt permits one listed label or the literal response `None`.
-3. **Combine:** retain at most one non-null prediction from each group and prune
-   all null branches.
+3. **Combine:** validate each output against its local group, retain at most one
+   valid category, and discard `None` and invalid responses.
 4. **Recurse:** repeat while more than $B$ candidates remain.
 
 The terminal rules match Algorithm 1 in the manuscript:
@@ -68,10 +75,20 @@ can be executed in parallel.
   <img src="assets/figures/prompt.png" width="94%" alt="Prompt used in the DCI conquer phase">
 </p>
 
-The implementation uses the paper's fixed prompt and output rule. A response is
-accepted only when it contains exactly one valid candidate label. `None`, no
-valid label, or multiple valid labels become a null output; invalid successful
-responses are not retried.
+The exact author-supplied templates are in [`dci/prompts.py`](dci/prompts.py).
+**Flat and DCI use different output instructions:** Flat requests one category
+from the complete vocabulary; DCI additionally permits `None`. DCI retains this
+instruction in its final local call, including the single-call case $N=B$.
+
+[`dci/validation.py`](dci/validation.py) removes fixed answer wrappers and matches
+one **complete category name** against the supplied list, restoring its canonical
+case. `None` and invalid responses both contribute no candidate. A single
+out-of-group label is invalid even if its name contains a shorter in-group label:
+`tiger cat` is not accepted as `cat`. Full ImageNet synset descriptions containing
+commas are treated as complete labels, not split into multiple predictions.
+The same validation applies to Flat, every recursive DCI level, and the final
+local call. Invalid successful responses are not retried; a null final result
+counts as incorrect and stays in the denominator.
 
 ## Installation
 
@@ -118,8 +135,8 @@ instead of using unrelated train or repository-specific splits. See
 
 The ImageNet-21K experiment uses the complete 21,843-synset vocabulary and
 samples 1,000 distinct images uniformly without replacement from the available
-ImageNet-21K pool in each run. It does **not** substitute ImageNet-1K validation
-images. If the pool is arranged under WNID directories, build a reusable index:
+ImageNet-21K pool in each run. If the pool is arranged under WNID directories,
+build a reusable index:
 
 ```bash
 dci-index-imagenet21k \
@@ -149,6 +166,12 @@ uses $B$ throughout to match the paper.
 The defaults use five independent runs, random grouping, and the paper's
 dataset-specific $B$. Use the same initial seed, candidate sizes, images,
 model endpoint, and decoding configuration for paired baseline/DCI commands.
+The baseline flag selects the Flat template independently of $B$. Optional
+`--temperature`, `--top-p`, and `--max-tokens` overrides are recorded in the run
+manifest; when omitted, the serving defaults are retained. Record the endpoint's
+model revision, preprocessing, context limit, batching, GPU allocation and cache
+configuration alongside the output directory. The CLI's default concurrency of
+10 is a configurable software default, not a recovered paper measurement setting.
 
 ### Full ImageNet-1K comparison
 
@@ -224,21 +247,35 @@ outputs/<dataset>/<model>/
 └── summary.json
 ```
 
-- JSONL files resume without recomputing completed images.
+- JSONL files resume without recomputing completed images. Changed prompts,
+  validation rules, candidate selections or decoding settings require a fresh
+  output directory to prevent mixing incompatible predictions.
 - Per-image groupings are deterministic from the run seed and image path, so a
   resumed run uses the same partitions.
 - Manifests record the exact candidate list, run seed, prompt hash, full catalog
   hash, environment, command arguments, and Git revision. API keys are omitted.
-- `summary.json` reports run-level results and mean ± population SD across runs.
+- Each JSONL record stores the prediction, target, call count and per-image
+  end-to-end latency. `--save-traces` also records local candidates, raw responses
+  and their `selected` / `none` / `invalid` validation outcomes.
+- `summary.json` reports run-level correct/total counts, accuracies and mean ± SD.
+  `--sd-ddof 0` (default) uses population SD; `--sd-ddof 1` uses sample SD. The
+  selected convention is stored explicitly. Accuracy is calculated from counts
+  without step snapping. Stored image timings support complete-run latency
+  summaries after a resumed run.
 - ImageNet labels that share the same display name are deterministically
   disambiguated, preserving all 1,000 class IDs and all 21,843 synsets.
 
 ## Results
 
+The [reported-results release](data/results/README.md) contains the current
+manuscript's summary workbooks and machine-readable figure data, synchronized
+on **2026-09-03**. Reported means and SDs are copied unchanged. Correction history
+is retained in the workbooks; original five-run prediction logs are unavailable.
+New CLI runs produce separate measurements and do not overwrite this release.
+
 Across the 24 model-dataset combinations in the main comparison, DCI has higher
 observed mean accuracy in every case, with an overall macro-average gain of
-4.67 percentage points. These are empirical results for the evaluated settings,
-not a guarantee for every model or deployment.
+4.67 percentage points.
 
 <p align="center">
   <img src="assets/figures/dci_main.png" width="100%" alt="DCI results on four benchmarks and six MLLMs">
@@ -250,6 +287,10 @@ absolute gains are +9.77 pp (Qwen2.5-VL-7B-Instruct), +10.82 pp
 (DeepSeek-VL-7B-chat), +6.58 pp (Kimi-VL-A3B-Instruct), and +5.21 pp
 (Gemma-4-E4B).
 
+At $N=B=10$, the six-model mean gain is **−1.05 pp**. Kimi-VL-A3B-Instruct
+has Flat **94.28%** and DCI **93.16%** (−1.12 pp). The small-set comparison
+retains the different Flat/DCI instructions; both methods make one call.
+
 <p align="center">
   <img src="assets/figures/dci_suppression.png" width="100%" alt="Candidate-set scaling results for DCI and monolithic inference">
 </p>
@@ -259,6 +300,12 @@ local and API-served models. Selected configurations also reduce measured
 latency relative to monolithic inference; this is a measured hardware-dependent
 result rather than a universal latency guarantee.
 
+At $B=100$, Qwen2.5-VL-7B-Instruct changes from **1.56%** to **37.88%**
+(+36.32 pp). At $B=500$, Qwen3-VL-2B-Instruct obtains **19.70%** at
+**5.99 s/image**, compared with Flat **2.12%** at **7.96 s/image**;
+Gemma-4-E4B obtains **15.82%** at **6.88 s/image**, compared with Flat
+**2.14%** at **16.39 s/image**. Full mean ± SD values are in the data release.
+
 <p align="center">
   <img src="assets/figures/imagenet21k_dci_advantage.png" width="100%" alt="Full-vocabulary ImageNet-21K stress-test results">
 </p>
@@ -266,6 +313,16 @@ result rather than a universal latency guarantee.
 The paper's complete figure set is available as source PDF plus web PNG under
 [`assets/figures/`](assets/figures/). The project page mirrors the PNGs under
 `docs/assets/`.
+
+### Qualitative examples (Figure 12)
+
+Both examples use **Qwen3-VL-2B-Instruct, $B=10$**. The candidate counts are
+**200 → 19 → 2 → 1** for CUB-200-2011 and **101 → 5 → 1** for Food-101.
+`None` and invalid outputs are removed before the next level.
+
+<p align="center">
+  <img src="assets/figures/dci_B10.png" width="100%" alt="Combined B=10 CUB-200-2011 and Food-101 candidate-pruning trajectories">
+</p>
 
 ## Complexity and limitations
 
@@ -300,7 +357,7 @@ notation, and figures are tracked against the manuscript in
 ```bibtex
 @misc{ye2026dci,
   title  = {Divide-and-Conquer Inference for Large-Scale Image Classification with Multimodal Large Language Models},
-  author = {Zhipeng Ye and Jiaqi Huang and Feng Jiang and Qiufeng Wang and Yikang Duan and Dawei Wang and Xihang Zhou and Qian Qiao},
+  author = {Zhipeng Ye and Jiaqi Huang and Feng Jiang and Qiufeng Wang and Yikang Duan and Dawei Wang and Kaixin Liu and Hao Li},
   year   = {2026},
   note   = {Manuscript under review; source code available at \url{https://github.com/FourierAI/DCI}}
 }
