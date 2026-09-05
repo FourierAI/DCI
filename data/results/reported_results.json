@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
-  "synchronized_on": "2026-09-03",
+  "synchronized_on": "2026-09-05",
   "kind": "author-reported aggregate results",
   "manuscript": {
     "filename": "DCI_ESWA_final_named.pdf",
-    "pages": 36,
-    "sha256": "b94ae6afff12e44df3effee013436efbb4d5a97598d082e07ed1c3956b44b2df"
+    "pages": 58,
+    "sha256": "de375b9e6efed79ecd27d17c9065d88629510d3bb8598d064f578715ad9ef8fa"
   },
   "provenance": {
     "source_workbook": "workbooks/DCI数据整理汇总.xlsx",

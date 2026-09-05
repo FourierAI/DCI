@@ -2,8 +2,8 @@ cff-version: 1.2.0
 message: "If you use DCI in your research, please cite this software and manuscript."
 title: "Divide-and-Conquer Inference"
 type: software
-version: 0.3.0
-date-released: 2026-09-03
+version: 0.4.0
+date-released: 2026-09-05
 repository-code: "https://github.com/FourierAI/DCI"
 license: MIT
 authors:

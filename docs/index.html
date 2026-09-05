@@ -116,10 +116,10 @@
                   </a>
                 </span>
                 <span class="link-block">
-                  <a href="https://github.com/FourierAI/DCI#paper-protocol" target="_blank" rel="noopener"
+                  <a href="https://github.com/FourierAI/DCI/blob/master/docs/EXPERIMENT_PROTOCOL.md" target="_blank" rel="noopener"
                      class="external-link button is-normal is-rounded is-dark">
                     <span class="icon"><i class="fas fa-terminal" aria-hidden="true"></i></span>
-                    <span>Reproduce</span>
+                    <span>Run Protocol</span>
                   </a>
                 </span>
                 <span class="link-block">
@@ -233,7 +233,7 @@
           <div class="column">
             <article class="method-card">
               <span>3</span><h3>Combine</h3>
-              <p>Validate complete category names; keep at most one local label and filter <code>None</code> and invalid responses.</p>
+              <p>Accept only an untouched raw response that exactly equals a local candidate; filter <code>None</code> and invalid responses.</p>
             </article>
           </div>
           <div class="column">
@@ -247,10 +247,13 @@
         <figure class="research-figure">
           <img src="assets/prompt.png" alt="Structured prompt used in the DCI conquer phase" loading="lazy">
           <figcaption>
-            <strong>Conquer-phase prompt.</strong> After fixed-wrapper normalization,
-            a complete output label must belong to the current group. <code>None</code>
-            and invalid responses are filtered. Flat uses a separate closed-set prompt;
-            DCI retains its <code>None</code>-enabled prompt at every level.
+            <strong>Conquer-phase prompt.</strong> The untouched raw response must
+            exactly equal one label in the current group. No whitespace, wrapper,
+            punctuation, quote, or code-fence removal, case conversion, spelling
+            correction, or synonym/substring matching is performed. <code>None</code>
+            and invalid responses are filtered. Even a global-vocabulary label is
+            invalid when it is absent from the current local group. Flat uses a separate closed-set
+            prompt; DCI retains its <code>None</code>-enabled prompt at every level.
           </figcaption>
         </figure>
       </div>
@@ -288,15 +291,19 @@
         <figure class="research-figure">
           <img src="assets/imagenet21k_dci_advantage.png" alt="Full-vocabulary ImageNet-21K stress-test results" loading="lazy">
           <figcaption>
-            Full-vocabulary ImageNet-21K stress test with <i>B</i> = 100: local
-            open-source models and API-served models, reported over five runs.
+            ImageNet-21K stress test over all 20,101 distinct
+            candidates with <i>B</i> = 100: local open-source models and
+            API-served models, reported over five runs.
           </figcaption>
         </figure>
         <p class="has-text-centered">
           Current summary workbooks and machine-readable values:
           <a href="https://github.com/FourierAI/DCI/tree/master/data/results">2026-09-03 reported-results release</a>.
           Means and SDs are copied from the reporting workbooks with their correction history;
-          original five-run prediction logs are unavailable.
+          original five-run prediction and correct/total logs are unavailable. The
+          current 20,101-name and exact-validation protocols were synchronized without
+          rerunning or rescoring these aggregates, so this release documents reported
+          manuscript values rather than a regenerated CLI reproduction.
         </p>
       </div>
     </section>
@@ -359,7 +366,7 @@
       <div class="container is-widescreen">
         <div class="columns is-centered has-text-centered">
           <div class="column is-four-fifths">
-            <h2 class="title is-3">Candidate-Pruning Trajectories</h2>
+            <h2 class="title is-3">DCI Process Visualization</h2>
             <p class="section-lead">
               Two representative examples using Qwen3-VL-2B-Instruct with <i>B</i> = 10.
             </p>
@@ -367,8 +374,9 @@
         </div>
         <figure class="research-figure wide-scroll-figure">
           <img src="assets/dci_B10.png" alt="Combined Figure 12: B=10 candidate-pruning trajectories on CUB-200-2011 and Food-101" loading="lazy">
-          <figcaption>Figure 12. CUB-200-2011: 200 → 19 → 2 → 1 candidates, ending at Sooty Albatross.
-            Food-101: 101 → 5 → 1 candidates, ending at beet salad. Both trajectories retain the correct label.</figcaption>
+          <figcaption>Figure 12. CUB-200-2011: 200 → 20 → 2 → 1 candidates, ending at Sooty Albatross.
+            Food-101: 101 → 5 → 1 candidates, ending at beet salad. Both trajectories
+            use exact raw-string validity checks and retain the correct label.</figcaption>
         </figure>
       </div>
     </section>
@@ -384,13 +392,19 @@
               <div><strong>5,794</strong><span>CUB-200-2011 test images</span></div>
               <div><strong>25,250</strong><span>Food-101 test images</span></div>
               <div><strong>50,000</strong><span>ImageNet-1K validation images</span></div>
-              <div><strong>21,843</strong><span>ImageNet-21K candidate synsets</span></div>
+              <div><strong>20,101</strong><span>ImageNet-21K candidate names</span></div>
             </div>
             <p class="protocol-note">
               Candidate subsets for <i>N</i> &lt; 1000 are independently sampled for
               every run and size, with all 50 ImageNet-1K validation images evaluated
               per selected class. ImageNet-21K samples 1,000 distinct images uniformly
-              from its available pool in each run.
+              from its available pool in each run. Its vocabulary uses the
+              first-listed name after each of the 21,843 WNIDs, preserving case and underscores
+              and removing exact duplicate names in source order. WNIDs sharing
+              a first name share one target label when computing classification
+              accuracy. Standard experiments use random grouping and <i>B</i> = 10;
+              the ImageNet-21K default is <i>B</i> = 100. A response is valid only
+              when its untouched text exactly equals a candidate supplied in that call.
             </p>
           </div>
         </div>

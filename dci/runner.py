@@ -21,7 +21,13 @@ from typing import Any
 from openai import APIError, OpenAI
 from tqdm import tqdm
 
-from .configs import DATASETS, DatasetConfig, resolve_path
+from .configs import (
+    DATASETS,
+    DEFAULT_BASE_SEED,
+    DEFAULT_RUNS,
+    DatasetConfig,
+    resolve_path,
+)
 from .prompts import DCI_PROMPT, FLAT_PROMPT, build_prompt
 from .validation import VALIDATION_VERSION, validate_prediction
 
@@ -89,12 +95,15 @@ def parse_args() -> argparse.Namespace:
         help="Candidate-set sizes N; defaults to the complete vocabulary.",
     )
     parser.add_argument(
-        "--runs", type=int, default=5, help="Independent runs; the paper uses 5."
+        "--runs",
+        type=int,
+        default=DEFAULT_RUNS,
+        help=f"Independent runs; the paper uses {DEFAULT_RUNS}.",
     )
     parser.add_argument("--max-workers", type=int, default=10)
     parser.add_argument("--max-samples", type=int)
     parser.add_argument("--samples-per-class", type=int)
-    parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--seed", type=int, default=DEFAULT_BASE_SEED)
     parser.add_argument("--output-dir", default="outputs")
     parser.add_argument(
         "--baseline", action="store_true", help="Use one monolithic prompt."
@@ -274,23 +283,22 @@ def _load_food101_official(
 
 
 def _load_imagenet21k_catalog(path: Path) -> tuple[dict[str, str], list[str]]:
-    rows: list[tuple[str, str]] = []
+    """Map every WNID to its first name and deduplicate the candidate strings.
+
+    Names are stripped only at their boundaries; case, spaces, and underscores
+    are preserved. Distinct WNIDs may share a name. Candidate order follows the
+    first occurrence in the catalog, with exact string equality for deduplication.
+    """
+    by_wnid: dict[str, str] = {}
+    names: list[str] = []
     for line in path.read_text(encoding="utf-8").splitlines():
-        wnid, description = line.split(",", maxsplit=1)
-        rows.append((wnid.strip(), description.strip()))
-    counts: dict[str, int] = {}
-    for _, description in rows:
-        key = description.casefold()
-        counts[key] = counts.get(key, 0) + 1
-    by_wnid = {
-        wnid: (
-            description
-            if counts[description.casefold()] == 1
-            else f"{description} [{wnid}]"
-        )
-        for wnid, description in rows
-    }
-    return by_wnid, [by_wnid[wnid] for wnid, _ in rows]
+        if "," not in line:
+            continue
+        wnid, name = line.split(",", maxsplit=2)[:2]
+        name = name.strip()
+        by_wnid[wnid.strip()] = name
+        names.append(name)
+    return by_wnid, list(dict.fromkeys(names))
 
 
 def _load_imagenet21k_index(
@@ -298,6 +306,7 @@ def _load_imagenet21k_index(
     metadata_path: Path | None,
     by_wnid: dict[str, str],
 ) -> dict[str, str]:
+    """Keep every indexed image and map its WNID to the catalog's first name."""
     if metadata_path is not None:
         with metadata_path.open(encoding="utf-8") as handle:
             payload = json.load(handle)
@@ -477,7 +486,9 @@ class DCIClassifier:
                 if self.top_p is not None:
                     request["top_p"] = self.top_p
                 response = self.client.chat.completions.create(**request)
-                return (response.choices[0].message.content or "").strip()
+                # Validation and traces operate on the model response verbatim.
+                # An absent content value is represented as an empty raw string.
+                return response.choices[0].message.content or ""
             except APIError:
                 retries += 1
                 if self.max_retries > 0 and retries > self.max_retries:
@@ -496,7 +507,9 @@ class DCIClassifier:
         ]
 
     @staticmethod
-    def normalize_prediction(prediction: str, candidates: list[str]) -> str | None:
+    def validate_prediction_label(
+        prediction: str, candidates: list[str]
+    ) -> str | None:
         return validate_prediction(prediction, candidates).label
 
     def _record_level(self, groups: list[list[str]], raw: list[str]) -> list[str]:
@@ -530,20 +543,33 @@ class DCIClassifier:
         survivors = self._record_level([labels], [raw])
         return survivors[0] if survivors else None
 
-    def _image_rng(self, image_path: Path) -> random.Random:
-        payload = f"{self.seed}\0{image_path.as_posix()}".encode()
+    def _image_rng(
+        self, image_path: Path, image_id: str | None = None
+    ) -> random.Random:
+        """Return a stable per-image RNG independent of the dataset root path."""
+        stable_id = image_id if image_id is not None else image_path.as_posix()
+        payload = f"{self.seed}\0{stable_id}".encode()
         digest = hashlib.sha256(payload).digest()
         return random.Random(int.from_bytes(digest[:8], "big"))
 
-    def classify(self, image_path: Path, labels: list[str], b: int) -> str | None:
+    def classify(
+        self,
+        image_path: Path,
+        labels: list[str],
+        b: int,
+        *,
+        image_id: str | None = None,
+    ) -> str | None:
         if b < 2:
             raise ValueError("B must be at least 2.")
+        if len(labels) > 1 and b > len(labels):
+            raise ValueError("B cannot exceed the initial candidate count.")
         self.last_trace = []
         if len(labels) <= 1:
             return labels[0] if labels else None
         image_data_url = self.encode_image(image_path)
         active = labels[:]
-        rng = self._image_rng(image_path)
+        rng = self._image_rng(image_path, image_id)
 
         while True:
             if not active:
@@ -598,6 +624,21 @@ def git_revision(repo_root: Path) -> str | None:
         return None
 
 
+def git_worktree_dirty(repo_root: Path) -> bool | None:
+    """Report whether tracked files differ from HEAD."""
+    try:
+        result = subprocess.run(
+            ["git", "status", "--porcelain", "--untracked-files=no"],
+            cwd=repo_root,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return bool(result.stdout)
+    except (OSError, subprocess.CalledProcessError):
+        return None
+
+
 def write_manifest(
     path: Path,
     args: argparse.Namespace,
@@ -616,6 +657,7 @@ def write_manifest(
     payload: dict[str, Any] = {
         "created_at": datetime.now(timezone.utc).isoformat(),
         "git_revision": git_revision(repo_root),
+        "git_worktree_dirty": git_worktree_dirty(repo_root),
         "python": sys.version,
         "platform": platform.platform(),
         "mode": mode,
@@ -645,6 +687,8 @@ def write_manifest(
             )
         previous = json.loads(path.read_text(encoding="utf-8"))
         keys = (
+            "git_revision",
+            "git_worktree_dirty",
             "mode",
             "run_index",
             "run_seed",
@@ -657,7 +701,14 @@ def write_manifest(
             "decoding",
         )
         changed = [key for key in keys if previous.get(key) != payload[key]]
-        for key in ("model", "api_base", "max_workers", "save_traces"):
+        for key in (
+            "model",
+            "api_base",
+            "max_workers",
+            "timeout",
+            "max_retries",
+            "save_traces",
+        ):
             if previous.get("arguments", {}).get(key) != arguments.get(key):
                 changed.append(key)
         if changed:
@@ -768,6 +819,10 @@ def main() -> None:
     b_values = args.b_values or list(config.default_b_values)
     if any(b < 2 for b in b_values):
         raise ValueError("Every B value must be at least 2.")
+    if not args.baseline and any(
+        b > candidate_count for candidate_count in candidate_counts for b in b_values
+    ):
+        raise ValueError("Every B value must not exceed its candidate count N.")
 
     max_samples = args.max_samples
     if max_samples is None:
@@ -838,7 +893,12 @@ def main() -> None:
                         prediction = (
                             classifier.classify_flat(image_path, selected_labels)
                             if args.baseline
-                            else classifier.classify(image_path, selected_labels, b)
+                            else classifier.classify(
+                                image_path,
+                                selected_labels,
+                                b,
+                                image_id=image,
+                            )
                         )
                         image_latency = time.perf_counter() - image_start
                         row = {

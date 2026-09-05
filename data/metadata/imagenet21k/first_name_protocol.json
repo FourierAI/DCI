@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "protocol": "imagenet21k-first-name-v1",
+  "synchronized_on": "2026-09-05",
+  "source_file": "im21K.txt",
+  "source_sha256": "66e637be9c3dc9c6a3850ec04ceae807d7225aece331581a72b5ca681016829d",
+  "source_wnids": 21843,
+  "distinct_wnids": 21843,
+  "candidate_rule": "First comma-separated name after each WNID; strip surrounding whitespace; preserve case and underscores; remove exact duplicate strings in source order.",
+  "distinct_candidate_names": 20101,
+  "duplicate_first_name_groups": 1444,
+  "wnids_in_duplicate_first_name_groups": 3186,
+  "candidate_file": "first_names.txt",
+  "candidate_file_sha256": "3577ce3def0f09abc5718569084487b8fe8543bbf0c2475f717209194d4b4c13",
+  "runtime_catalog_sha256": "6049b97cbfe81f3563b4e4fc5ea06aaab2e4a5e252e1e64e2f557a8900f871bf",
+  "target_rule": "Each WNID maps to its first name; WNIDs with the same first name share the same target label.",
+  "metric_scope": "Classification accuracy over sampled images, comparing validated predicted names with mapped target names.",
+  "image_pool_rule": "Index every available image file under a recognized WNID directory, or every entry in a supplied relative-path-to-WNID index; do not subsample WNIDs when constructing the pool.",
+  "run_sampling_rule": "Sample 1,000 distinct images uniformly without replacement from the indexed image pool in each run; samples may overlap across runs.",
+  "runs": 5,
+  "default_B": 100
+}

@@ -1,6 +1,8 @@
 {
-  "synchronized_on": "2026-09-03",
+  "synchronized_on": "2026-09-05",
   "source_manuscript": "DCI_ESWA_final_named.pdf",
+  "source_manuscript_pages": 58,
+  "source_manuscript_sha256": "de375b9e6efed79ecd27d17c9065d88629510d3bb8598d064f578715ad9ef8fa",
   "figures": [
     {
       "figure": 1,
@@ -71,8 +73,8 @@
     {
       "figure": 12,
       "basename": "dci_B10",
-      "pdf_sha256": "37871f46f36187ecca9fc660854cdc5aa464187fac4d09f4790a39ee2801181b",
-      "png_sha256": "03b6ca3fcf20d475e42aabc30247f81af7d83bf8873b5200debb5c733e23a017"
+      "pdf_sha256": "779b4c8d7c97e621dc29c5c2eee4d3b1da2e0f937a87505fea6f8cf9ec73b323",
+      "png_sha256": "ce2bec5e088c4bf7799d6eb48c501b154e2870cd5f181a3905c5bfed654881fd"
     }
   ],
   "compatibility_aliases": {

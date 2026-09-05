@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+from collections import Counter
 from pathlib import Path
 
 import pytest
@@ -67,6 +68,12 @@ def test_only_current_tts_panels_are_exported():
 
 def test_current_figures_and_legacy_aliases_are_synchronized():
     manifest = json.loads((ROOT / "assets/figures/manifest.json").read_text())
+    assert manifest["source_manuscript"] == "DCI_ESWA_final_named.pdf"
+    assert manifest["source_manuscript_pages"] == 58
+    assert (
+        manifest["source_manuscript_sha256"]
+        == "de375b9e6efed79ecd27d17c9065d88629510d3bb8598d064f578715ad9ef8fa"
+    )
     assert [item["figure"] for item in manifest["figures"]] == list(range(1, 13))
     assert manifest["figures"][-1]["basename"] == "dci_B10"
     for item in manifest["figures"]:
@@ -87,7 +94,7 @@ def test_current_figures_and_legacy_aliases_are_synchronized():
 
 @pytest.mark.parametrize(
     "filename,counts",
-    [("cub200_B10.json", [200, 19, 2, 1]), ("food101_B10.json", [101, 5, 1])],
+    [("cub200_B10.json", [200, 20, 2, 1]), ("food101_B10.json", [101, 5, 1])],
 )
 def test_qualitative_trace_counts_and_validity(filename, counts):
     trace = json.loads((RESULTS / "qualitative" / filename).read_text())
@@ -96,12 +103,50 @@ def test_qualitative_trace_counts_and_validity(filename, counts):
     assert [trace["config"]["initial_label_count"]] + [
         len(r["output_labels"]) for r in trace["rounds"]
     ] == counts
+    previous_output = None
     for level in trace["rounds"]:
+        if previous_output is not None:
+            assert level["input_labels"] == previous_output
+        grouped_inputs = [
+            label for group in level["groups"] for label in group["candidate_labels"]
+        ]
+        assert Counter(grouped_inputs) == Counter(level["input_labels"])
         assert all(len(g["candidate_labels"]) <= 10 for g in level["groups"])
-        assert all(
-            g["selected_label"] is None or g["selected_label"] in g["candidate_labels"]
-            for g in level["groups"]
-        )
+        selected = []
+        for group in level["groups"]:
+            raw = group["raw_response"]
+            if raw == "None":
+                assert group["status"] == "none"
+                assert group["selected_label"] is None
+            elif raw in group["candidate_labels"]:
+                assert group["status"] == "selected"
+                assert group["selected_label"] == raw
+                selected.append(raw)
+            else:
+                assert group["status"] == "invalid_response"
+                assert group["selected_label"] is None
+        assert Counter(level["output_labels"]) == Counter(selected)
+        previous_output = level["output_labels"]
+    assert trace["final_label"] == previous_output[0]
+
+
+def test_food_trace_rejects_global_labels_absent_from_the_current_group():
+    trace = json.loads((RESULTS / "qualitative/food101_B10.json").read_text())
+    first_round = trace["rounds"][0]
+    rejected = [
+        group
+        for group in first_round["groups"]
+        if group["raw_response"] in {"salad", "Greek_salad"}
+    ]
+    assert Counter(group["raw_response"] for group in rejected) == {
+        "salad": 3,
+        "Greek_salad": 1,
+    }
+    for group in rejected:
+        raw = group["raw_response"]
+        assert raw not in group["candidate_labels"]
+        assert group["selected_label"] is None
+        assert group["status"] == "invalid_response"
 
 
 def test_current_authors_are_consistent_across_public_text():
@@ -114,4 +159,21 @@ def test_current_authors_are_consistent_across_public_text():
 def test_release_is_identified_as_reported_aggregates():
     payload = json.loads((RESULTS / "reported_results.json").read_text())
     assert payload["provenance"]["original_five_run_logs_available"] is False
-    assert payload["manuscript"]["pages"] == 36
+    assert payload["manuscript"] == {
+        "filename": "DCI_ESWA_final_named.pdf",
+        "pages": 58,
+        "sha256": "de375b9e6efed79ecd27d17c9065d88629510d3bb8598d064f578715ad9ef8fa",
+    }
+
+
+def test_qualitative_release_copies_have_traceable_source_hashes():
+    records = json.loads((RESULTS / "qualitative/provenance.json").read_text())
+    assert {record["file"] for record in records} == {
+        "cub200_B10.json",
+        "food101_B10.json",
+    }
+    for record in records:
+        released = RESULTS / "qualitative" / record["file"]
+        assert hashlib.sha256(released.read_bytes()).hexdigest() == record["sha256"]
+        assert record["source_sha256"] != record["sha256"]
+        assert "Only the directory prefix" in record["release_copy_change"]

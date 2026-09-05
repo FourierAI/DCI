@@ -8,16 +8,25 @@ Current manuscript summary data are in [`results/`](results/README.md). Dataset
 catalogs here describe evaluation inputs; they are separate from experimental
 prediction logs and from the reported aggregate results.
 
-| Dataset | Official source | Paper split |
-|:--|:--|:--|
-| CIFAR-100 | <https://www.cs.toronto.edu/~kriz/cifar.html> | complete 10,000-image test split |
-| CUB-200-2011 | <https://www.vision.caltech.edu/datasets/cub_200_2011/> | complete 5,794-image official test split |
-| Food-101 | <https://data.vision.ee.ethz.ch/cvl/datasets_extra/food-101/> | complete 25,250-image official test split |
-| ImageNet-1K / ImageNet-21K | <https://www.image-net.org/> | see below |
+| Dataset | Official source | Paper split | Full candidate count |
+|:--|:--|:--|--:|
+| CIFAR-100 | <https://www.cs.toronto.edu/~kriz/cifar.html> | complete 10,000-image test split | 100 |
+| CUB-200-2011 | <https://www.vision.caltech.edu/datasets/cub_200_2011/> | complete 5,794-image official test split | 200 |
+| Food-101 | <https://data.vision.ee.ethz.ch/cvl/datasets_extra/food-101/> | complete 25,250-image official test split | 101 |
+| ImageNet-1K | <https://www.image-net.org/> | complete 50,000-image official validation split | 1,000 |
+| ImageNet-21K | <https://www.image-net.org/> | 1,000 images sampled/run from the available pool | 20,101 |
 
 The loader validates split and vocabulary sizes before inference. This prevents
 an accidental train/full-dataset evaluation from being reported as the paper's
 test protocol.
+
+The current paper uses random grouping with $B=10$ for the four standard
+datasets unless an experiment states otherwise. Its ImageNet-21K default is
+$B=100$. All responses use exact raw-string membership: no whitespace,
+answer-wrapper, punctuation, quote, or code-fence removal; no case conversion,
+spelling correction, synonym lookup, substring extraction, or semantic mapping.
+See [`../docs/EXPERIMENT_PROTOCOL.md`](../docs/EXPERIMENT_PROTOCOL.md) for the
+complete protocol matrix.
 
 ## Expected layouts
 
@@ -73,6 +82,12 @@ those files. For the paper's candidate-scaling protocol, the runner samples
 classes independently for every run and every candidate count, then evaluates
 all 50 validation images from each selected class.
 
+The scaling experiment uses $N\in\{10,20,100,200,500,1000\}$. Subsets for
+$N<1000$ are not nested across values of $N$ and contain $50N$ images. At
+$N=1000$, the complete class set and all 50,000 validation images are fixed,
+while DCI groupings and model generation are repeated across runs. Paired Flat
+and DCI evaluations use the same selected classes and images within a run.
+
 Two ImageNet-1K pairs share a human-readable name (`crane` and `maillot`). The
 runner disambiguates only these collisions with their numeric class ID so the
 candidate vocabulary retains all 1,000 classes.
@@ -80,8 +95,8 @@ candidate vocabulary retains all 1,000 classes.
 ### ImageNet-21K full-vocabulary stress test
 
 The paper samples images from an available ImageNet-21K pool and evaluates them
-against all 21,843 synsets. It does not use ImageNet-1K validation images as a
-substitute. Arrange images under WNID directories:
+against 20,101 distinct first-name candidates derived from all 21,843 WNIDs.
+Arrange images under WNID directories:
 
 ```text
 imagenet21k/
@@ -107,11 +122,26 @@ WNID:
 }
 ```
 
-The candidate catalog comes from `metadata/imagenet21k/im21K.txt`. The runner
-uses the full comma-separated synset description and appends a WNID only when
-two descriptions are identical, preserving exactly 21,843 unique candidate
-strings. Each run samples 1,000 distinct indexed images uniformly without
-replacement; samples may overlap across runs.
+The candidate catalog comes from `metadata/imagenet21k/im21K.txt`. For each
+WNID, the runner selects the first comma-separated name, strips surrounding
+whitespace, and preserves case and underscores. Exact duplicate names are
+removed in source order, yielding 20,101 candidate strings. The catalog retains
+every WNID-to-name mapping; each indexed image maps through its WNID for scoring,
+and WNIDs sharing a name share one target label. Classification accuracy is
+computed against these mapped targets.
+Each run samples 1,000 distinct indexed images uniformly without replacement;
+samples may overlap across runs.
+
+`metadata/imagenet21k/first_names.txt` exports the ordered candidate names.
+`first_name_protocol.json` records the rule, source counts, and hashes. The
+source mapping remains unchanged, including its non-selected synonyms. See
+[`../docs/IMAGENET21K_LABEL_PROTOCOL.md`](../docs/IMAGENET21K_LABEL_PROTOCOL.md).
+
+This section defines inputs for new runs of the current protocol. The manuscript's
+existing ImageNet-21K aggregates were not regenerated when the first-name
+protocol was synchronized, and the original five-run prediction and correct/total
+logs are unavailable. See [`results/README.md`](results/README.md) before using
+the reported-results snapshot as reproducibility evidence.
 
 ## Custom JSON metadata
 

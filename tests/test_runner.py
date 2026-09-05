@@ -1,3 +1,4 @@
+import hashlib
 import json
 import random
 from pathlib import Path
@@ -12,6 +13,7 @@ from dci.runner import (
     _load_cub_official,
     _load_food101_official,
     _load_imagenet21k_catalog,
+    _load_imagenet21k_index,
     _load_json_split,
     evaluate,
     load_dataset,
@@ -45,20 +47,40 @@ def test_groups_are_randomized_reproducibly():
     assert sorted(item for group in first for item in group) == labels
 
 
-def test_normalize_prediction_uses_the_paper_regex_rule():
+def test_grouping_seed_uses_the_stable_image_identifier(tmp_path):
+    model = classifier(seed=9)
+    labels = list("abcdefghijkl")
+    first = model.groups(
+        labels,
+        3,
+        model._image_rng(tmp_path / "first/root/image.jpg", "class/image.jpg"),
+    )
+    second = model.groups(
+        labels,
+        3,
+        model._image_rng(tmp_path / "other/root/image.jpg", "class/image.jpg"),
+    )
+    assert first == second
+
+
+def test_validate_prediction_label_uses_exact_raw_string_membership():
     candidates = ["Black-footed Albatross", "wild_cat", "cat"]
-    assert (
-        DCIClassifier.normalize_prediction(
-            'Answer: "black-footed albatross".', candidates
-        )
-        == "Black-footed Albatross"
+    assert DCIClassifier.validate_prediction_label("wild_cat", candidates) == "wild_cat"
+    rejected = (
+        " wild_cat",
+        "wild_cat.",
+        "Wild_cat",
+        '"wild_cat"',
+        "Answer: wild_cat",
+        "None",
+        "None, maybe wild_cat",
+        "wild_cat or cat",
+        "unknown",
     )
-    assert DCIClassifier.normalize_prediction("None", candidates) is None
-    assert (
-        DCIClassifier.normalize_prediction("None, maybe wild_cat", candidates) is None
+    assert all(
+        DCIClassifier.validate_prediction_label(raw, candidates) is None
+        for raw in rejected
     )
-    assert DCIClassifier.normalize_prediction("wild_cat or cat", candidates) is None
-    assert DCIClassifier.normalize_prediction("unknown", candidates) is None
 
 
 def test_prompt_uses_the_final_paper_wording():
@@ -77,7 +99,7 @@ def test_query_retains_model_token_default_unless_overridden():
 
         def create(self, **kwargs):
             self.requests.append(kwargs)
-            message = type("Message", (), {"content": "cat"})()
+            message = type("Message", (), {"content": " cat.\n"})()
             choice = type("Choice", (), {"message": message})()
             return type("Response", (), {"choices": [choice]})()
 
@@ -87,16 +109,19 @@ def test_query_retains_model_token_default_unless_overridden():
         (),
         {"chat": type("Chat", (), {"completions": completions})()},
     )()
-    DCIClassifier(client, "model", 1, None).query(
+    raw = DCIClassifier(client, "model", 1, None).query(
         "data:image/jpeg;base64,eA==", ["cat"]
     )
+    assert raw == " cat.\n"
     assert "max_tokens" not in completions.requests[0]
 
 
-def test_nested_candidate_names_do_not_create_a_false_multiple_match():
+def test_nested_candidate_names_require_an_exact_complete_match():
+    candidates = ["dog", "hot dog"]
+    assert DCIClassifier.validate_prediction_label("hot dog", candidates) == "hot dog"
     assert (
-        DCIClassifier.normalize_prediction("The answer is hot dog.", ["dog", "hot dog"])
-        == "hot dog"
+        DCIClassifier.validate_prediction_label("The answer is hot dog.", candidates)
+        is None
     )
 
 
@@ -180,11 +205,74 @@ def test_imagenet1k_catalog_keeps_all_1000_class_ids():
     assert sum(label.startswith("crane [class ") for label in labels) == 2
 
 
-def test_imagenet21k_catalog_keeps_all_synsets_unique():
+def test_imagenet21k_catalog_has_20101_first_names_and_keeps_all_wnids():
     path = Path(DATASETS["imagenet21k"].label_file)
     by_wnid, labels = _load_imagenet21k_catalog(path)
     assert len(by_wnid) == 21_843
-    assert len(labels) == len(set(labels)) == 21_843
+    assert len(labels) == len(set(labels)) == 20_101
+    assert by_wnid["n02012849"] == by_wnid["n03126707"] == "crane"
+    assert DATASETS["imagenet21k"].expected_labels == len(labels)
+    exported = path.with_name("first_names.txt")
+    protocol = json.loads(path.with_name("first_name_protocol.json").read_text())
+    assert exported.read_text(encoding="utf-8").splitlines() == labels
+    assert protocol["distinct_candidate_names"] == len(labels)
+    assert protocol["source_sha256"] == hashlib.sha256(path.read_bytes()).hexdigest()
+    assert protocol["candidate_file_sha256"] == hashlib.sha256(
+        exported.read_bytes()
+    ).hexdigest()
+
+
+def test_imagenet21k_catalog_preserves_first_name_spelling_and_order(tmp_path):
+    catalog = tmp_path / "labels.txt"
+    catalog.write_text(
+        "n00000001, crane , lifting_device\n"
+        "n00000002,crane, bird\n"
+        "n00000003,rock_climbing, rock climbing\n"
+        "n00000004,sea lion, seal\n"
+        "n00000005,Crane, capitalized_alias\n",
+        encoding="utf-8",
+    )
+    by_wnid, labels = _load_imagenet21k_catalog(catalog)
+    assert by_wnid == {
+        "n00000001": "crane",
+        "n00000002": "crane",
+        "n00000003": "rock_climbing",
+        "n00000004": "sea lion",
+        "n00000005": "Crane",
+    }
+    assert labels == ["crane", "rock_climbing", "sea lion", "Crane"]
+
+
+@pytest.mark.parametrize("use_json_index", [False, True])
+def test_imagenet21k_shared_names_keep_images_from_both_wnids(
+    tmp_path, use_json_index
+):
+    catalog = tmp_path / "labels.txt"
+    catalog.write_text(
+        "n00000001,crane, lifting_device\nn00000002,crane, bird\n",
+        encoding="utf-8",
+    )
+    by_wnid, labels = _load_imagenet21k_catalog(catalog)
+    image_root = tmp_path / "images"
+    expected = {"n00000001/one.jpg": "crane", "n00000002/two.jpg": "crane"}
+    for name in expected:
+        image = image_root / name
+        image.parent.mkdir(parents=True, exist_ok=True)
+        image.touch()
+    metadata_path = None
+    if use_json_index:
+        metadata_path = tmp_path / "index.json"
+        metadata_path.write_text(
+            json.dumps(
+                {
+                    "n00000001/one.jpg": "n00000001",
+                    "n00000002/two.jpg": {"wnid": "n00000002"},
+                }
+            ),
+            encoding="utf-8",
+        )
+    assert labels == ["crane"]
+    assert _load_imagenet21k_index(image_root, metadata_path, by_wnid) == expected
 
 
 def test_bundled_cifar_protocol_count_is_validated():
@@ -229,6 +317,14 @@ def test_food101_loader_uses_official_test_file(tmp_path):
     [
         "tiger cat",
         "The answer is tiger cat.",
+        " cat",
+        "cat ",
+        "cat.",
+        "Cat",
+        "'cat'",
+        '"cat"',
+        "`cat`",
+        "Answer: cat",
         "cat or dog",
         "cat, dog",
         "unknown",
@@ -245,19 +341,47 @@ def test_out_of_group_and_multiple_label_outputs_are_invalid(raw):
     assert result.status == "invalid"
 
 
-@pytest.mark.parametrize("raw", ["None", "none", "'None'", "Answer: None."])
-def test_explicit_none_is_distinguished_from_invalid(raw):
-    assert validate_prediction(raw, ["cat"]).status == "none"
+def test_only_exact_none_is_distinguished_from_invalid():
+    assert validate_prediction("None", ["cat"]).status == "none"
+    for raw in ("none", "NONE", " None", "None ", "'None'", "Answer: None."):
+        assert validate_prediction(raw, ["cat"]).status == "invalid"
 
 
-def test_full_synset_description_is_one_valid_category():
+def test_caller_supplied_comma_label_is_matched_as_a_whole():
+    # Generic validator coverage: ImageNet-21K itself uses only the first name.
     label = "apple, orchard_apple_tree, Malus_pumila"
     assert validate_prediction(label, ["apple", label]).label == label
     assert validate_prediction(label, ["apple"]).label is None
 
 
-def test_case_collisions_are_not_arbitrarily_resolved():
+def test_case_distinct_candidates_are_resolved_by_exact_spelling():
+    assert validate_prediction("cat", ["cat", "CAT"]).label == "cat"
+    assert validate_prediction("CAT", ["cat", "CAT"]).label == "CAT"
     assert validate_prediction("Cat", ["cat", "CAT"]).status == "invalid"
+
+
+def test_each_call_validates_against_only_its_supplied_candidate_group():
+    model = classifier()
+    survivors = model._record_level(
+        [["cat", "lynx"], ["dog", "wolf"]],
+        ["dog", "dog"],
+    )
+    assert survivors == ["dog"]
+    first, second = model.last_trace[0]["groups"]
+    assert first["response"] == "dog" and first["status"] == "invalid"
+    assert second["response"] == "dog" and second["status"] == "selected"
+
+
+def test_flat_records_and_rejects_an_untouched_raw_variant(tmp_path):
+    model = classifier()
+    image = tmp_path / "image.jpg"
+    image.write_bytes(b"image")
+    model.query = lambda image, labels, **kwargs: " cat\n"
+    assert model.classify_flat(image, ["cat", "dog"]) is None
+    group = model.last_trace[0]["groups"][0]
+    assert group["response"] == " cat\n"
+    assert group["prediction"] is None
+    assert group["status"] == "invalid"
 
 
 def test_flat_and_dci_single_calls_use_distinct_templates(tmp_path):
@@ -309,6 +433,11 @@ def test_empty_and_singleton_inputs_do_not_read_an_image(tmp_path):
 def test_below_two_is_rejected(tmp_path):
     with pytest.raises(ValueError, match="at least 2"):
         classifier().classify(tmp_path / "missing.jpg", ["cat"], 1)
+
+
+def test_group_size_cannot_exceed_the_initial_candidate_count(tmp_path):
+    with pytest.raises(ValueError, match="cannot exceed"):
+        classifier().classify(tmp_path / "missing.jpg", ["cat", "dog"], 3)
 
 
 def test_all_invalid_groups_are_pruned_without_retry(tmp_path):
@@ -382,6 +511,10 @@ def test_manifest_blocks_reusing_predictions_after_protocol_changes(tmp_path):
     with pytest.raises(ValueError, match="Cannot mix"):
         write_manifest(path, args, tmp_path, **kwargs)
     assert path.read_text() == original
+    args.temperature = None
+    args.max_retries = 7
+    with pytest.raises(ValueError, match="max_retries"):
+        write_manifest(path, args, tmp_path, **kwargs)
 
 
 def test_cli_dispatches_flat_separately_and_saves_traces(tmp_path, monkeypatch):

@@ -20,9 +20,10 @@ Jiaqi Huang: Jiaqi.Huang26@student.xjtlu.edu.cn
 
 [Project Page](https://fourierai.github.io/DCI/) ·
 [Method](#method) ·
-[Reproduction](#paper-protocol) ·
+[Run protocol](#paper-protocol) ·
 [Results](#results) ·
 [Reported data](data/results/README.md) ·
+[Experiment protocol](docs/EXPERIMENT_PROTOCOL.md) ·
 [Paper alignment](docs/PAPER_ALIGNMENT.md) ·
 [Citation](#citation)
 
@@ -80,12 +81,18 @@ The exact author-supplied templates are in [`dci/prompts.py`](dci/prompts.py).
 from the complete vocabulary; DCI additionally permits `None`. DCI retains this
 instruction in its final local call, including the single-call case $N=B$.
 
-[`dci/validation.py`](dci/validation.py) removes fixed answer wrappers and matches
-one **complete category name** against the supplied list, restoring its canonical
-case. `None` and invalid responses both contribute no candidate. A single
-out-of-group label is invalid even if its name contains a shorter in-group label:
-`tiger cat` is not accepted as `cat`. Full ImageNet synset descriptions containing
-commas are treated as complete labels, not split into multiple predictions.
+[`dci/validation.py`](dci/validation.py) applies the manuscript's literal raw-output
+rule. The untouched response is selected only when it is exactly equal to one
+candidate string supplied in that call. The literal response `None` is recorded
+as a null decision; every other response is invalid. Validation does not trim
+whitespace, remove answer wrappers, punctuation, quotes, or code fences, change
+case, correct spelling, split text, or perform substring, synonym, or semantic
+matching. For example, `Greek_salad` is invalid when the local candidate is
+`greek_salad`, and `tiger cat` is not accepted as `cat`. Each ImageNet-21K
+candidate is the first listed name of a WNID after exact-name deduplication;
+other synonyms in the source catalog are not accepted as alternate responses.
+For DCI, a label that belongs to the global vocabulary is still invalid when it
+is absent from the current local group, and it is removed before the next level.
 The same validation applies to Flat, every recursive DCI level, and the final
 local call. Invalid successful responses are not retried; a null final result
 counts as incorrect and stays in the denominator.
@@ -119,13 +126,13 @@ Use `--api-base` and `--api-key` for another local or hosted endpoint.
 Images are not redistributed. The runner validates the paper's evaluation
 counts before starting inference.
 
-| Dataset | CLI name | Paper evaluation split | Expected images | Default $B$ |
-|:--|:--|:--|--:|--:|
-| CIFAR-100 | `cifar100` | complete official test split | 10,000 | 10 |
-| CUB-200-2011 | `cub200` | complete official test split | 5,794 | 10 |
-| Food-101 | `food101` | complete official test split | 25,250 | 10 |
-| ImageNet-1K | `imagenet1k` | official validation split | 50,000 | 10 |
-| ImageNet-21K | `imagenet21k` | full-vocabulary stress-test pool | 1,000 sampled/run | 100 |
+| Dataset | CLI name | Paper evaluation split | Candidates | Images | Default $B$ |
+|:--|:--|:--|--:|--:|--:|
+| CIFAR-100 | `cifar100` | complete official test split | 100 | 10,000 | 10 |
+| CUB-200-2011 | `cub200` | complete official test split | 200 | 5,794 | 10 |
+| Food-101 | `food101` | complete official test split | 101 | 25,250 | 10 |
+| ImageNet-1K | `imagenet1k` | official validation split | 1,000 | 50,000 | 10 |
+| ImageNet-21K | `imagenet21k` | available full-vocabulary stress-test pool | 20,101 | 1,000 sampled/run | 100 |
 
 For CUB-200-2011, keep `images.txt`, `image_class_labels.txt`, `classes.txt`,
 and `train_test_split.txt` beside the `images/` directory. For Food-101, keep
@@ -133,9 +140,16 @@ and `train_test_split.txt` beside the `images/` directory. For Food-101, keep
 instead of using unrelated train or repository-specific splits. See
 [`data/README.md`](data/README.md) for exact layouts.
 
-The ImageNet-21K experiment uses the complete 21,843-synset vocabulary and
-samples 1,000 distinct images uniformly without replacement from the available
-ImageNet-21K pool in each run. If the pool is arranged under WNID directories,
+The ImageNet-21K vocabulary is constructed from all 21,843 WNID entries by taking
+the first comma-separated name after each WNID, preserving case and underscores,
+and removing exact duplicate names in source order. This produces **20,101
+distinct candidate names**. WNIDs with the same first name share one target
+label; classification accuracy is computed against these mapped targets. See
+[`docs/IMAGENET21K_LABEL_PROTOCOL.md`](docs/IMAGENET21K_LABEL_PROTOCOL.md) and the
+exported [`first_names.txt`](data/metadata/imagenet21k/first_names.txt).
+
+Each run samples 1,000 distinct images uniformly without replacement from the
+available ImageNet-21K pool. If the pool is arranged under WNID directories,
 build a reusable index:
 
 ```bash
@@ -163,15 +177,21 @@ uses $B$ throughout to match the paper.
 
 ## Paper protocol
 
-The defaults use five independent runs, random grouping, and the paper's
-dataset-specific $B$. Use the same initial seed, candidate sizes, images,
-model endpoint, and decoding configuration for paired baseline/DCI commands.
+The consolidated model, dataset, sampling, validation, failure-handling,
+latency, cost, and provenance specifications are in
+[`docs/EXPERIMENT_PROTOCOL.md`](docs/EXPERIMENT_PROTOCOL.md).
+
+The defaults use five runs, random grouping, and the paper's dataset-specific
+$B$. The CLI starts from seed 0 unless overridden and derives one run seed per
+run. Use the same initial seed, candidate sizes, images, model endpoint, and
+decoding configuration for paired baseline/DCI commands.
 The baseline flag selects the Flat template independently of $B$. Optional
 `--temperature`, `--top-p`, and `--max-tokens` overrides are recorded in the run
 manifest; when omitted, the serving defaults are retained. Record the endpoint's
 model revision, preprocessing, context limit, batching, GPU allocation and cache
 configuration alongside the output directory. The CLI's default concurrency of
 10 is a configurable software default, not a recovered paper measurement setting.
+All Flat and DCI responses use exact raw-string validation as described above.
 
 ### Full ImageNet-1K comparison
 
@@ -196,8 +216,10 @@ dci-eval \
 ### Candidate-set scaling on ImageNet-1K
 
 For every run and every $N<1000$, the runner independently samples $N$
-classes and evaluates all 50 official validation images per selected class. At
-$N=1000$, it uses all classes and all 50,000 images.
+classes and evaluates all 50 official validation images per selected class.
+Subsets are not nested across different values of $N$. At $N=1000$, it uses all
+classes and all 50,000 images; grouping and model generation are repeated across
+runs.
 
 ```bash
 dci-eval \
@@ -225,8 +247,8 @@ dci-eval \
   --seed 0
 ```
 
-The 1,000-image per-run sample is automatic for `imagenet21k`. The default
-`--max-retries 0` reproduces the paper's retry-until-response policy; set a
+The 1,000-image per-run sample is automatic for `imagenet21k`. For new runs, the
+default `--max-retries 0` follows the paper's retry-until-response rule; set a
 positive value to impose a finite retry limit. Invalid model outputs are never
 retried.
 
@@ -250,28 +272,37 @@ outputs/<dataset>/<model>/
 - JSONL files resume without recomputing completed images. Changed prompts,
   validation rules, candidate selections or decoding settings require a fresh
   output directory to prevent mixing incompatible predictions.
-- Per-image groupings are deterministic from the run seed and image path, so a
-  resumed run uses the same partitions.
+- Per-image groupings are deterministic from the run seed and the image's stable
+  dataset-relative identifier, so moving an unchanged dataset does not alter its
+  partitions and a resumed run uses the same groups.
 - Manifests record the exact candidate list, run seed, prompt hash, full catalog
-  hash, environment, command arguments, and Git revision. API keys are omitted.
+  hash, environment, command arguments, Git revision, and whether tracked files
+  in the worktree were dirty. API keys are omitted.
 - Each JSONL record stores the prediction, target, call count and per-image
   end-to-end latency. `--save-traces` also records local candidates, raw responses
   and their `selected` / `none` / `invalid` validation outcomes.
-- `summary.json` reports run-level correct/total counts, accuracies and mean ± SD.
+- `summary.json` reports run-level correct/total counts, accuracies and mean ± SD
+  for newly executed runs.
   `--sd-ddof 0` (default) uses population SD; `--sd-ddof 1` uses sample SD. The
   selected convention is stored explicitly. Accuracy is calculated from counts
   without step snapping. Stored image timings support complete-run latency
   summaries after a resumed run.
-- ImageNet labels that share the same display name are deterministically
-  disambiguated, preserving all 1,000 class IDs and all 21,843 synsets.
+- The ImageNet-1K loader disambiguates repeated display names with class IDs,
+  preserving its 1,000 candidate classes. ImageNet-21K uses first names with
+  exact-name deduplication: its WNID catalog retains 21,843 entries and its
+  candidate list contains 20,101 names. No WNID suffix is added to these names.
 
 ## Results
 
-The [reported-results release](data/results/README.md) contains the current
-manuscript's summary workbooks and machine-readable figure data, synchronized
-on **2026-09-03**. Reported means and SDs are copied unchanged. Correction history
-is retained in the workbooks; original five-run prediction logs are unavailable.
-New CLI runs produce separate measurements and do not overwrite this release.
+The [reported-results release](data/results/README.md) is an aggregate-data
+snapshot synchronized with the current manuscript. Reported means and SDs were
+copied from the reporting workbooks, whose correction history is retained.
+Original five-run predictions and correct/total records are unavailable, and
+the 20,101-name ImageNet-21K protocol synchronization did not rerun models or
+rescore those historical aggregates. The release therefore documents the
+author-reported manuscript values; it is not presented as output regenerated by
+the current CLI. New CLI runs produce separate, auditable measurements and do
+not overwrite this release.
 
 Across the 24 model-dataset combinations in the main comparison, DCI has higher
 observed mean accuracy in every case, with an overall macro-average gain of
@@ -317,7 +348,7 @@ The paper's complete figure set is available as source PDF plus web PNG under
 ### Qualitative examples (Figure 12)
 
 Both examples use **Qwen3-VL-2B-Instruct, $B=10$**. The candidate counts are
-**200 → 19 → 2 → 1** for CUB-200-2011 and **101 → 5 → 1** for Food-101.
+**200 → 20 → 2 → 1** for CUB-200-2011 and **101 → 5 → 1** for Food-101.
 `None` and invalid outputs are removed before the next level.
 
 <p align="center">
