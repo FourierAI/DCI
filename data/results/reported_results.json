@@ -1,20 +1,8 @@
 {
   "schema_version": 1,
   "synchronized_on": "2026-09-05",
-  "kind": "author-reported aggregate results",
-  "manuscript": {
-    "filename": "DCI_ESWA_final_named.pdf",
-    "pages": 58,
-    "sha256": "de375b9e6efed79ecd27d17c9065d88629510d3bb8598d064f578715ad9ef8fa"
-  },
-  "provenance": {
-    "source_workbook": "workbooks/DCI数据整理汇总.xlsx",
-    "original_five_run_logs_available": false,
-    "means": "Current reporting values, including author-confirmed corrections; unchanged by this sync.",
-    "standard_deviations": "Manuscript-authority SDs retained unchanged; not recomputed or converted.",
-    "history": "Source and correction sheets are preserved in the copied workbooks.",
-    "exclusions": "Entropy worksheets and the historical ImageNet-21K TTS panel are not used by the current manuscript."
-  },
+  "kind": "final aggregate results",
+  "title": "Divide-and-Conquer Inference for Large-Scale Image Classification with Multimodal Large Language Models",
   "tables": {
     "Main DCI": {
       "columns": [
@@ -25,9 +13,7 @@
         "w/ DCI Mean (%)",
         "w/ DCI SD (pp)",
         "Delta (pp)",
-        "Runs",
-        "Source Workbook",
-        "Authority Sheet"
+        "Runs"
       ],
       "rows": [
         [
@@ -38,9 +24,7 @@
           71.57,
           0.68,
           9.77,
-          5,
-          "主图.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen2.5-VL-7B-Instruct",
@@ -50,9 +34,7 @@
           65.05,
           0.21,
           3.26,
-          5,
-          "主图.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen2.5-VL-7B-Instruct",
@@ -62,9 +44,7 @@
           48.6,
           0.15,
           13.31,
-          5,
-          "主图.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen2.5-VL-7B-Instruct",
@@ -74,9 +54,7 @@
           80.76,
           0.1,
           1.37,
-          5,
-          "主图.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen2.5-VL-7B-Instruct",
@@ -86,9 +64,7 @@
           66.495,
           null,
           6.93,
-          5,
-          "主图.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen3-VL-2B-Instruct",
@@ -98,9 +74,7 @@
           51.36,
           0.32,
           10.82,
-          5,
-          "主图.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen3-VL-2B-Instruct",
@@ -110,9 +84,7 @@
           76.03,
           0.11,
           0.12,
-          5,
-          "主图.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen3-VL-2B-Instruct",
@@ -122,9 +94,7 @@
           20.13,
           0.33,
           3.37,
-          5,
-          "主图.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen3-VL-2B-Instruct",
@@ -134,9 +104,7 @@
           75.78,
           0.15,
           3.58,
-          5,
-          "主图.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen3-VL-2B-Instruct",
@@ -146,9 +114,7 @@
           55.825,
           null,
           4.47,
-          5,
-          "主图.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen3-VL-4B-Instruct",
@@ -158,9 +124,7 @@
           69.09,
           0.23,
           4.28,
-          5,
-          "主图.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen3-VL-4B-Instruct",
@@ -170,9 +134,7 @@
           80.76,
           0.14,
           1.05,
-          5,
-          "主图.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen3-VL-4B-Instruct",
@@ -182,9 +144,7 @@
           38.05,
           0.1,
           3.51,
-          5,
-          "主图.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen3-VL-4B-Instruct",
@@ -194,9 +154,7 @@
           88.49,
           0.25,
           3.24,
-          5,
-          "主图.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen3-VL-4B-Instruct",
@@ -206,9 +164,7 @@
           69.0975,
           null,
           3.02,
-          5,
-          "主图.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen3-VL-8B-Instruct",
@@ -218,9 +174,7 @@
           71.16,
           0.44,
           3.6,
-          5,
-          "主图.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen3-VL-8B-Instruct",
@@ -230,9 +184,7 @@
           81.63,
           0.18,
           2.91,
-          5,
-          "主图.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen3-VL-8B-Instruct",
@@ -242,9 +194,7 @@
           46.85,
           0.16,
           5.88,
-          5,
-          "主图.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen3-VL-8B-Instruct",
@@ -254,9 +204,7 @@
           85.65,
           0.14,
           1.82,
-          5,
-          "主图.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen3-VL-8B-Instruct",
@@ -266,9 +214,7 @@
           71.3225,
           null,
           3.55,
-          5,
-          "主图.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Kimi-VL-A3B-Instruct",
@@ -278,9 +224,7 @@
           42.27,
           0.27,
           6.58,
-          5,
-          "主图.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Kimi-VL-A3B-Instruct",
@@ -290,9 +234,7 @@
           31.9,
           0.15,
           0.66,
-          5,
-          "主图.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Kimi-VL-A3B-Instruct",
@@ -302,9 +244,7 @@
           19.43,
           0.18,
           8.1,
-          5,
-          "主图.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Kimi-VL-A3B-Instruct",
@@ -314,9 +254,7 @@
           68.8,
           0.17,
           1.48,
-          5,
-          "主图.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Kimi-VL-A3B-Instruct",
@@ -326,9 +264,7 @@
           40.6,
           null,
           4.21,
-          5,
-          "主图.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Gemma-4-E2B",
@@ -338,9 +274,7 @@
           30.88,
           0.21,
           12.63,
-          5,
-          "主图.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Gemma-4-E2B",
@@ -350,9 +284,7 @@
           55.05,
           0.25,
           1.93,
-          5,
-          "主图.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Gemma-4-E2B",
@@ -362,9 +294,7 @@
           7.26,
           0.19,
           2.24,
-          5,
-          "主图.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Gemma-4-E2B",
@@ -374,9 +304,7 @@
           48.41,
           0.21,
           6.58,
-          5,
-          "主图.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Gemma-4-E2B",
@@ -386,9 +314,7 @@
           35.4,
           null,
           5.85,
-          5,
-          "主图.xlsx",
-          "Figure Data"
+          5
         ]
       ]
     },
@@ -572,9 +498,7 @@
         "DCI Mean (%)",
         "DCI SD (pp)",
         "Gain (pp)",
-        "Unit",
-        "Source Workbook",
-        "Authority Sheet"
+        "Unit"
       ],
       "rows": [
         [
@@ -587,9 +511,7 @@
           97.76,
           2.17,
           0.6,
-          "%",
-          "dci抑制下降.xlsx",
-          "Data_Input"
+          "%"
         ],
         [
           "qwen7b",
@@ -601,9 +523,7 @@
           96.04,
           1.94,
           0.8,
-          "%",
-          "dci抑制下降.xlsx",
-          "Data_Input"
+          "%"
         ],
         [
           "qwen7b",
@@ -615,9 +535,7 @@
           90,
           1.79,
           5.12,
-          "%",
-          "dci抑制下降.xlsx",
-          "Data_Input"
+          "%"
         ],
         [
           "qwen7b",
@@ -629,9 +547,7 @@
           85.43,
           1.17,
           2.49,
-          "%",
-          "dci抑制下降.xlsx",
-          "Data_Input"
+          "%"
         ],
         [
           "qwen7b",
@@ -643,9 +559,7 @@
           78.15,
           0.6,
           7.75,
-          "%",
-          "dci抑制下降.xlsx",
-          "Data_Input"
+          "%"
         ],
         [
           "qwen7b",
@@ -657,9 +571,7 @@
           71.57,
           0.68,
           9.77,
-          "%",
-          "dci抑制下降.xlsx",
-          "Data_Input"
+          "%"
         ],
         [
           "qwen2b",
@@ -671,9 +583,7 @@
           92.92,
           1.85,
           -2.88,
-          "%",
-          "dci抑制下降.xlsx",
-          "Data_Input"
+          "%"
         ],
         [
           "qwen2b",
@@ -685,9 +595,7 @@
           89.14,
           1.5,
           -0.72,
-          "%",
-          "dci抑制下降.xlsx",
-          "Data_Input"
+          "%"
         ],
         [
           "qwen2b",
@@ -699,9 +607,7 @@
           76.19,
           1.33,
           0.88,
-          "%",
-          "dci抑制下降.xlsx",
-          "Data_Input"
+          "%"
         ],
         [
           "qwen2b",
@@ -713,9 +619,7 @@
           67.09,
           1.34,
           0.81,
-          "%",
-          "dci抑制下降.xlsx",
-          "Data_Input"
+          "%"
         ],
         [
           "qwen2b",
@@ -727,9 +631,7 @@
           55.18,
           0.61,
           2.06,
-          "%",
-          "dci抑制下降.xlsx",
-          "Data_Input"
+          "%"
         ],
         [
           "qwen2b",
@@ -741,9 +643,7 @@
           51.36,
           0.32,
           10.82,
-          "%",
-          "dci抑制下降.xlsx",
-          "Data_Input"
+          "%"
         ],
         [
           "qwen8b",
@@ -755,9 +655,7 @@
           97.08,
           1.81,
           0.04,
-          "%",
-          "dci抑制下降.xlsx",
-          "Data_Input"
+          "%"
         ],
         [
           "qwen8b",
@@ -769,9 +667,7 @@
           97.62,
           1.93,
           0.82,
-          "%",
-          "dci抑制下降.xlsx",
-          "Data_Input"
+          "%"
         ],
         [
           "qwen8b",
@@ -783,9 +679,7 @@
           91.79,
           1.66,
           0.77,
-          "%",
-          "dci抑制下降.xlsx",
-          "Data_Input"
+          "%"
         ],
         [
           "qwen8b",
@@ -797,9 +691,7 @@
           86.62,
           0.59,
           2.38,
-          "%",
-          "dci抑制下降.xlsx",
-          "Data_Input"
+          "%"
         ],
         [
           "qwen8b",
@@ -811,9 +703,7 @@
           78.56,
           0.48,
           2,
-          "%",
-          "dci抑制下降.xlsx",
-          "Data_Input"
+          "%"
         ],
         [
           "qwen8b",
@@ -825,9 +715,7 @@
           71.16,
           0.44,
           3.6,
-          "%",
-          "dci抑制下降.xlsx",
-          "Data_Input"
+          "%"
         ],
         [
           "deepseek",
@@ -839,9 +727,7 @@
           67.04,
           1.73,
           -1.68,
-          "%",
-          "dci抑制下降.xlsx",
-          "Data_Input"
+          "%"
         ],
         [
           "deepseek",
@@ -853,9 +739,7 @@
           56.02,
           1.37,
           7.02,
-          "%",
-          "dci抑制下降.xlsx",
-          "Data_Input"
+          "%"
         ],
         [
           "deepseek",
@@ -867,9 +751,7 @@
           39.58,
           1.05,
           21.74,
-          "%",
-          "dci抑制下降.xlsx",
-          "Data_Input"
+          "%"
         ],
         [
           "deepseek",
@@ -881,9 +763,7 @@
           31.46,
           0.65,
           24.25,
-          "%",
-          "dci抑制下降.xlsx",
-          "Data_Input"
+          "%"
         ],
         [
           "deepseek",
@@ -895,9 +775,7 @@
           21.44,
           0.36,
           19.24,
-          "%",
-          "dci抑制下降.xlsx",
-          "Data_Input"
+          "%"
         ],
         [
           "deepseek",
@@ -909,9 +787,7 @@
           19.04,
           0.4,
           18.54,
-          "%",
-          "dci抑制下降.xlsx",
-          "Data_Input"
+          "%"
         ],
         [
           "kimi",
@@ -923,9 +799,7 @@
           93.16,
           1.72,
           -1.12,
-          "%",
-          "dci抑制下降.xlsx",
-          "Data_Input"
+          "%"
         ],
         [
           "kimi",
@@ -937,9 +811,7 @@
           83.86,
           1.28,
           -3.84,
-          "%",
-          "dci抑制下降.xlsx",
-          "Data_Input"
+          "%"
         ],
         [
           "kimi",
@@ -951,9 +823,7 @@
           65.75,
           1.14,
           2.03,
-          "%",
-          "dci抑制下降.xlsx",
-          "Data_Input"
+          "%"
         ],
         [
           "kimi",
@@ -965,9 +835,7 @@
           56.7,
           0.92,
           4.17,
-          "%",
-          "dci抑制下降.xlsx",
-          "Data_Input"
+          "%"
         ],
         [
           "kimi",
@@ -979,9 +847,7 @@
           46.39,
           0.29,
           5.67,
-          "%",
-          "dci抑制下降.xlsx",
-          "Data_Input"
+          "%"
         ],
         [
           "kimi",
@@ -993,9 +859,7 @@
           42.27,
           0.27,
           6.58,
-          "%",
-          "dci抑制下降.xlsx",
-          "Data_Input"
+          "%"
         ],
         [
           "gemma4",
@@ -1007,9 +871,7 @@
           87.48,
           1.91,
           -1.28,
-          "%",
-          "dci抑制下降.xlsx",
-          "Data_Input"
+          "%"
         ],
         [
           "gemma4",
@@ -1021,9 +883,7 @@
           80.16,
           1.65,
           -2,
-          "%",
-          "dci抑制下降.xlsx",
-          "Data_Input"
+          "%"
         ],
         [
           "gemma4",
@@ -1035,9 +895,7 @@
           65.52,
           1.32,
           -3.12,
-          "%",
-          "dci抑制下降.xlsx",
-          "Data_Input"
+          "%"
         ],
         [
           "gemma4",
@@ -1049,9 +907,7 @@
           56.81,
           0.86,
           -1.81,
-          "%",
-          "dci抑制下降.xlsx",
-          "Data_Input"
+          "%"
         ],
         [
           "gemma4",
@@ -1063,9 +919,7 @@
           43.79,
           0.36,
           1.91,
-          "%",
-          "dci抑制下降.xlsx",
-          "Data_Input"
+          "%"
         ],
         [
           "gemma4",
@@ -1077,9 +931,7 @@
           36.67,
           0.26,
           5.21,
-          "%",
-          "dci抑制下降.xlsx",
-          "Data_Input"
+          "%"
         ]
       ]
     },
@@ -1093,9 +945,7 @@
         "DCI Mean (%)",
         "DCI SD (pp)",
         "DCI Cost (USD/image)",
-        "Improvement (pp)",
-        "Source Workbook",
-        "Authority Sheet"
+        "Improvement (pp)"
       ],
       "rows": [
         [
@@ -1107,9 +957,7 @@
           37.88,
           1.75,
           null,
-          36.32,
-          "imagenet21k_dci_主要.xlsx",
-          "Open-Source"
+          36.32
         ],
         [
           "Local",
@@ -1120,9 +968,7 @@
           20.14,
           1.16,
           null,
-          18.02,
-          "imagenet21k_dci_主要.xlsx",
-          "Open-Source"
+          18.02
         ],
         [
           "Local",
@@ -1133,9 +979,7 @@
           33.4,
           1.48,
           null,
-          30.44,
-          "imagenet21k_dci_主要.xlsx",
-          "Open-Source"
+          30.44
         ],
         [
           "Local",
@@ -1146,9 +990,7 @@
           34.68,
           1.68,
           null,
-          24,
-          "imagenet21k_dci_主要.xlsx",
-          "Open-Source"
+          24
         ],
         [
           "Local",
@@ -1159,9 +1001,7 @@
           13.46,
           0.65,
           null,
-          11.32,
-          "imagenet21k_dci_主要.xlsx",
-          "Open-Source"
+          11.32
         ],
         [
           "API-served",
@@ -1172,9 +1012,7 @@
           45.14,
           1.77,
           0.3728865,
-          9.36,
-          "imagenet21k_dci_主要.xlsx",
-          "API-Served"
+          9.36
         ],
         [
           "API-served",
@@ -1185,9 +1023,7 @@
           62.92,
           2.33,
           1.32118695,
-          17.04,
-          "imagenet21k_dci_主要.xlsx",
-          "API-Served"
+          17.04
         ],
         [
           "API-served",
@@ -1198,9 +1034,7 @@
           43.56,
           2.1,
           0.035938415,
-          6.8,
-          "imagenet21k_dci_主要.xlsx",
-          "API-Served"
+          6.8
         ],
         [
           "API-served",
@@ -1211,9 +1045,7 @@
           32.36,
           1.36,
           0.3592008,
-          17.26,
-          "imagenet21k_dci_主要.xlsx",
-          "API-Served"
+          17.26
         ],
         [
           "API-served",
@@ -1224,9 +1056,7 @@
           15.52,
           1.17,
           0.052318048,
-          3.06,
-          "imagenet21k_dci_主要.xlsx",
-          "API-Served"
+          3.06
         ]
       ]
     },
@@ -1240,9 +1070,7 @@
         "Mean",
         "SD",
         "Unit",
-        "Runs",
-        "Source Workbook",
-        "Authority Sheet"
+        "Runs"
       ],
       "rows": [
         [
@@ -1254,9 +1082,7 @@
           16.54,
           0.93,
           "%",
-          5,
-          "imagenet21k_gs消融.xlsx",
-          "Paper Table"
+          5
         ],
         [
           "Qwen3-VL-2B-Instruct",
@@ -1267,9 +1093,7 @@
           13.49,
           0.23,
           "s/image",
-          5,
-          "imagenet21k_gs消融.xlsx",
-          "Paper Table"
+          5
         ],
         [
           "Gemma-4-E4B",
@@ -1280,9 +1104,7 @@
           12.88,
           0.45,
           "%",
-          5,
-          "imagenet21k_gs消融.xlsx",
-          "Paper Table"
+          5
         ],
         [
           "Gemma-4-E4B",
@@ -1293,9 +1115,7 @@
           10.33,
           0.19,
           "s/image",
-          5,
-          "imagenet21k_gs消融.xlsx",
-          "Paper Table"
+          5
         ],
         [
           "Qwen3-VL-2B-Instruct",
@@ -1306,9 +1126,7 @@
           20.14,
           1.16,
           "%",
-          5,
-          "imagenet21k_gs消融.xlsx",
-          "Paper Table"
+          5
         ],
         [
           "Qwen3-VL-2B-Instruct",
@@ -1319,9 +1137,7 @@
           10.55,
           0.18,
           "s/image",
-          5,
-          "imagenet21k_gs消融.xlsx",
-          "Paper Table"
+          5
         ],
         [
           "Gemma-4-E4B",
@@ -1332,9 +1148,7 @@
           13.46,
           0.65,
           "%",
-          5,
-          "imagenet21k_gs消融.xlsx",
-          "Paper Table"
+          5
         ],
         [
           "Gemma-4-E4B",
@@ -1345,9 +1159,7 @@
           7.59,
           0.21,
           "s/image",
-          5,
-          "imagenet21k_gs消融.xlsx",
-          "Paper Table"
+          5
         ],
         [
           "Qwen3-VL-2B-Instruct",
@@ -1358,9 +1170,7 @@
           19.7,
           1.08,
           "%",
-          5,
-          "imagenet21k_gs消融.xlsx",
-          "Paper Table"
+          5
         ],
         [
           "Qwen3-VL-2B-Instruct",
@@ -1371,9 +1181,7 @@
           5.99,
           0.19,
           "s/image",
-          5,
-          "imagenet21k_gs消融.xlsx",
-          "Paper Table"
+          5
         ],
         [
           "Gemma-4-E4B",
@@ -1384,9 +1192,7 @@
           15.82,
           0.43,
           "%",
-          5,
-          "imagenet21k_gs消融.xlsx",
-          "Paper Table"
+          5
         ],
         [
           "Gemma-4-E4B",
@@ -1397,9 +1203,7 @@
           6.88,
           0.13,
           "s/image",
-          5,
-          "imagenet21k_gs消融.xlsx",
-          "Paper Table"
+          5
         ],
         [
           "Qwen3-VL-2B-Instruct",
@@ -1410,9 +1214,7 @@
           18.24,
           1.02,
           "%",
-          5,
-          "imagenet21k_gs消融.xlsx",
-          "Paper Table"
+          5
         ],
         [
           "Qwen3-VL-2B-Instruct",
@@ -1423,9 +1225,7 @@
           6,
           0.11,
           "s/image",
-          5,
-          "imagenet21k_gs消融.xlsx",
-          "Paper Table"
+          5
         ],
         [
           "Gemma-4-E4B",
@@ -1436,9 +1236,7 @@
           12.42,
           0.51,
           "%",
-          5,
-          "imagenet21k_gs消融.xlsx",
-          "Paper Table"
+          5
         ],
         [
           "Gemma-4-E4B",
@@ -1449,9 +1247,7 @@
           7.03,
           0.18,
           "s/image",
-          5,
-          "imagenet21k_gs消融.xlsx",
-          "Paper Table"
+          5
         ],
         [
           "Qwen3-VL-2B-Instruct",
@@ -1462,9 +1258,7 @@
           13.78,
           0.92,
           "%",
-          5,
-          "imagenet21k_gs消融.xlsx",
-          "Paper Table"
+          5
         ],
         [
           "Qwen3-VL-2B-Instruct",
@@ -1475,9 +1269,7 @@
           6.74,
           0.14,
           "s/image",
-          5,
-          "imagenet21k_gs消融.xlsx",
-          "Paper Table"
+          5
         ],
         [
           "Gemma-4-E4B",
@@ -1488,9 +1280,7 @@
           7.82,
           0.55,
           "%",
-          5,
-          "imagenet21k_gs消融.xlsx",
-          "Paper Table"
+          5
         ],
         [
           "Gemma-4-E4B",
@@ -1501,9 +1291,7 @@
           8.67,
           0.12,
           "s/image",
-          5,
-          "imagenet21k_gs消融.xlsx",
-          "Paper Table"
+          5
         ],
         [
           "Qwen3-VL-2B-Instruct",
@@ -1514,9 +1302,7 @@
           2.12,
           0.55,
           "%",
-          5,
-          "imagenet21k_gs消融.xlsx",
-          "Paper Table"
+          5
         ],
         [
           "Qwen3-VL-2B-Instruct",
@@ -1527,9 +1313,7 @@
           7.96,
           0.12,
           "s/image",
-          5,
-          "imagenet21k_gs消融.xlsx",
-          "Paper Table"
+          5
         ],
         [
           "Gemma-4-E4B",
@@ -1540,9 +1324,7 @@
           2.14,
           0.32,
           "%",
-          5,
-          "imagenet21k_gs消融.xlsx",
-          "Paper Table"
+          5
         ],
         [
           "Gemma-4-E4B",
@@ -1553,9 +1335,7 @@
           16.39,
           0.09,
           "s/image",
-          5,
-          "imagenet21k_gs消融.xlsx",
-          "Paper Table"
+          5
         ]
       ]
     },
@@ -1569,9 +1349,7 @@
         "Mean",
         "SD",
         "Unit",
-        "Runs",
-        "Source Workbook",
-        "Authority Sheet"
+        "Runs"
       ],
       "rows": [
         [
@@ -1583,9 +1361,7 @@
           81.36,
           0.19,
           "%",
-          5,
-          "gs_消融.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen3-VL-8B-Instruct",
@@ -1596,9 +1372,7 @@
           69.29,
           0.24,
           "%",
-          5,
-          "gs_消融.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen3-VL-8B-Instruct",
@@ -1609,9 +1383,7 @@
           1.14,
           0.08,
           "s/image",
-          5,
-          "gs_消融.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen3-VL-8B-Instruct",
@@ -1622,9 +1394,7 @@
           9.06,
           0.15,
           "s/image",
-          5,
-          "gs_消融.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen3-VL-8B-Instruct",
@@ -1635,9 +1405,7 @@
           81.62,
           0.21,
           "%",
-          5,
-          "gs_消融.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen3-VL-8B-Instruct",
@@ -1648,9 +1416,7 @@
           70.92,
           0.33,
           "%",
-          5,
-          "gs_消融.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen3-VL-8B-Instruct",
@@ -1661,9 +1427,7 @@
           0.53,
           0.04,
           "s/image",
-          5,
-          "gs_消融.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen3-VL-8B-Instruct",
@@ -1674,9 +1438,7 @@
           3.19,
           0.11,
           "s/image",
-          5,
-          "gs_消融.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen3-VL-8B-Instruct",
@@ -1687,9 +1449,7 @@
           81.63,
           0.18,
           "%",
-          5,
-          "gs_消融.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen3-VL-8B-Instruct",
@@ -1700,9 +1460,7 @@
           71.16,
           0.44,
           "%",
-          5,
-          "gs_消融.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen3-VL-8B-Instruct",
@@ -1713,9 +1471,7 @@
           0.37,
           0.09,
           "s/image",
-          5,
-          "gs_消融.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen3-VL-8B-Instruct",
@@ -1726,9 +1482,7 @@
           1.91,
           0.09,
           "s/image",
-          5,
-          "gs_消融.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen3-VL-8B-Instruct",
@@ -1739,9 +1493,7 @@
           81,
           0.13,
           "%",
-          5,
-          "gs_消融.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen3-VL-8B-Instruct",
@@ -1752,9 +1504,7 @@
           70.99,
           0.38,
           "%",
-          5,
-          "gs_消融.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen3-VL-8B-Instruct",
@@ -1765,9 +1515,7 @@
           0.32,
           0.11,
           "s/image",
-          5,
-          "gs_消融.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen3-VL-8B-Instruct",
@@ -1778,9 +1526,7 @@
           1.63,
           0.05,
           "s/image",
-          5,
-          "gs_消融.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen3-VL-8B-Instruct",
@@ -1791,9 +1537,7 @@
           80.27,
           0.15,
           "%",
-          5,
-          "gs_消融.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen3-VL-8B-Instruct",
@@ -1804,9 +1548,7 @@
           70.14,
           0.23,
           "%",
-          5,
-          "gs_消融.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen3-VL-8B-Instruct",
@@ -1817,9 +1559,7 @@
           0.26,
           0.04,
           "s/image",
-          5,
-          "gs_消融.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen3-VL-8B-Instruct",
@@ -1830,9 +1570,7 @@
           1.32,
           0.08,
           "s/image",
-          5,
-          "gs_消融.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen3-VL-8B-Instruct",
@@ -1843,9 +1581,7 @@
           78.72,
           0.16,
           "%",
-          5,
-          "gs_消融.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen3-VL-8B-Instruct",
@@ -1856,9 +1592,7 @@
           67.56,
           0.38,
           "%",
-          5,
-          "gs_消融.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen3-VL-8B-Instruct",
@@ -1869,9 +1603,7 @@
           0.2,
           0.05,
           "s/image",
-          5,
-          "gs_消融.xlsx",
-          "Figure Data"
+          5
         ],
         [
           "Qwen3-VL-8B-Instruct",
@@ -1882,9 +1614,7 @@
           1.05,
           0.06,
           "s/image",
-          5,
-          "gs_消融.xlsx",
-          "Figure Data"
+          5
         ]
       ]
     },
@@ -1903,9 +1633,7 @@
         "Execution Mode",
         "Parallel Samples",
         "Aggregation Calls",
-        "Notes",
-        "Source Workbook",
-        "Authority Sheet"
+        "Notes"
       ],
       "rows": [
         [
@@ -1922,9 +1650,7 @@
           "Single pass",
           null,
           null,
-          "Direct inference without a TTS strategy.",
-          "tts对比.xlsx",
-          "Figure Data"
+          "Direct inference without a TTS strategy."
         ],
         [
           "CUB-200-2011",
@@ -1940,9 +1666,7 @@
           "Sequential",
           null,
           null,
-          "Chain-of-Thought prompting.",
-          "tts对比.xlsx",
-          "Figure Data"
+          "Chain-of-Thought prompting."
         ],
         [
           "CUB-200-2011",
@@ -1958,9 +1682,7 @@
           "Sequential",
           null,
           null,
-          "Plan-and-Solve prompting.",
-          "tts对比.xlsx",
-          "Figure Data"
+          "Plan-and-Solve prompting."
         ],
         [
           "CUB-200-2011",
@@ -1976,9 +1698,7 @@
           "Parallel",
           5,
           0,
-          "Five model responses are sampled in parallel and aggregated by voting.",
-          "tts对比.xlsx",
-          "Figure Data"
+          "Five model responses are sampled in parallel and aggregated by voting."
         ],
         [
           "CUB-200-2011",
@@ -1994,9 +1714,7 @@
           "Parallel + aggregation",
           4,
           1,
-          "Four responses are sampled in parallel, followed by one aggregation call.",
-          "tts对比.xlsx",
-          "Figure Data"
+          "Four responses are sampled in parallel, followed by one aggregation call."
         ],
         [
           "CUB-200-2011",
@@ -2012,9 +1730,7 @@
           "Sequential",
           null,
           null,
-          "Describe first, then answer/classify.",
-          "tts对比.xlsx",
-          "Figure Data"
+          "Describe first, then answer/classify."
         ],
         [
           "CUB-200-2011",
@@ -2030,9 +1746,7 @@
           "Sequential",
           null,
           null,
-          "DCI executed sequentially.",
-          "tts对比.xlsx",
-          "Figure Data"
+          "DCI executed sequentially."
         ],
         [
           "CUB-200-2011",
@@ -2048,9 +1762,7 @@
           "Parallel",
           null,
           null,
-          "DCI groups executed in parallel.",
-          "tts对比.xlsx",
-          "Figure Data"
+          "DCI groups executed in parallel."
         ],
         [
           "ImageNet-1K",
@@ -2066,9 +1778,7 @@
           "Single pass",
           null,
           null,
-          "Direct inference without a TTS strategy.",
-          "tts对比.xlsx",
-          "Figure Data"
+          "Direct inference without a TTS strategy."
         ],
         [
           "ImageNet-1K",
@@ -2084,9 +1794,7 @@
           "Sequential",
           null,
           null,
-          "Chain-of-Thought prompting.",
-          "tts对比.xlsx",
-          "Figure Data"
+          "Chain-of-Thought prompting."
         ],
         [
           "ImageNet-1K",
@@ -2102,9 +1810,7 @@
           "Sequential",
           null,
           null,
-          "Plan-and-Solve prompting.",
-          "tts对比.xlsx",
-          "Figure Data"
+          "Plan-and-Solve prompting."
         ],
         [
           "ImageNet-1K",
@@ -2120,9 +1826,7 @@
           "Parallel",
           5,
           0,
-          "Five model responses are sampled in parallel and aggregated by voting.",
-          "tts对比.xlsx",
-          "Figure Data"
+          "Five model responses are sampled in parallel and aggregated by voting."
         ],
         [
           "ImageNet-1K",
@@ -2138,9 +1842,7 @@
           "Parallel + aggregation",
           4,
           1,
-          "Four responses are sampled in parallel, followed by one aggregation call.",
-          "tts对比.xlsx",
-          "Figure Data"
+          "Four responses are sampled in parallel, followed by one aggregation call."
         ],
         [
           "ImageNet-1K",
@@ -2156,9 +1858,7 @@
           "Sequential",
           null,
           null,
-          "Describe first, then answer/classify.",
-          "tts对比.xlsx",
-          "Figure Data"
+          "Describe first, then answer/classify."
         ],
         [
           "ImageNet-1K",
@@ -2174,9 +1874,7 @@
           "Sequential",
           null,
           null,
-          "DCI executed sequentially.",
-          "tts对比.xlsx",
-          "Figure Data"
+          "DCI executed sequentially."
         ],
         [
           "ImageNet-1K",
@@ -2192,9 +1890,7 @@
           "Parallel",
           null,
           null,
-          "DCI groups executed in parallel.",
-          "tts对比.xlsx",
-          "Figure Data"
+          "DCI groups executed in parallel."
         ]
       ]
     },
@@ -2207,9 +1903,7 @@
         "Mean Accuracy (%)",
         "SD (pp)",
         "Unit",
-        "Runs",
-        "Source Workbook",
-        "Authority Sheet"
+        "Runs"
       ],
       "rows": [
         [
@@ -2220,9 +1914,7 @@
           71.57,
           0.68,
           "%",
-          5,
-          "分组策略.xlsx",
-          "Table 1"
+          5
         ],
         [
           "Qwen3-VL-4B-Instruct",
@@ -2232,9 +1924,7 @@
           69.09,
           0.23,
           "%",
-          5,
-          "分组策略.xlsx",
-          "Table 1"
+          5
         ],
         [
           "Qwen2.5-VL-7B-Instruct",
@@ -2244,9 +1934,7 @@
           71.32,
           0.42,
           "%",
-          5,
-          "分组策略.xlsx",
-          "Table 1"
+          5
         ],
         [
           "Qwen3-VL-4B-Instruct",
@@ -2256,9 +1944,7 @@
           68.81,
           0.35,
           "%",
-          5,
-          "分组策略.xlsx",
-          "Table 1"
+          5
         ],
         [
           "Qwen2.5-VL-7B-Instruct",
@@ -2268,9 +1954,7 @@
           71.39,
           0.61,
           "%",
-          5,
-          "分组策略.xlsx",
-          "Table 1"
+          5
         ],
         [
           "Qwen3-VL-4B-Instruct",
@@ -2280,9 +1964,7 @@
           69.11,
           0.37,
           "%",
-          5,
-          "分组策略.xlsx",
-          "Table 1"
+          5
         ]
       ]
     }

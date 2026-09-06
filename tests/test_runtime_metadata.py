@@ -1,8 +1,7 @@
-"""Machine-readable checks for the manuscript-aligned execution protocol."""
+"""Offline checks for software runtime configuration and input catalogs."""
 
 from __future__ import annotations
 
-import hashlib
 import json
 import re
 from argparse import Namespace
@@ -16,17 +15,17 @@ from dci.configs import (
     IMAGENET21K_B_VALUES,
     STANDARD_B_VALUES,
 )
-from dci.runner import git_revision, git_worktree_dirty, write_manifest
+from dci.runner import (
+    _load_imagenet21k_catalog,
+    git_revision,
+    git_worktree_dirty,
+    write_manifest,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
-IMAGENET21K_METADATA = ROOT / "data/metadata/imagenet21k"
 
 
-def sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
-def test_paper_execution_defaults_are_centralized():
+def test_runtime_defaults_are_centralized():
     assert DEFAULT_RUNS == 5
     assert DEFAULT_BASE_SEED == 0
     assert all(
@@ -39,25 +38,23 @@ def test_paper_execution_defaults_are_centralized():
     assert imagenet21k.expected_images is None
 
 
-def test_imagenet21k_protocol_metadata_matches_exported_candidates():
+def test_imagenet21k_source_catalog_matches_runtime_candidates():
     config = DATASETS["imagenet21k"]
-    protocol_path = ROOT / str(config.protocol_metadata)
-    protocol = json.loads(protocol_path.read_text(encoding="utf-8"))
-    source = IMAGENET21K_METADATA / protocol["source_file"]
-    candidates = IMAGENET21K_METADATA / protocol["candidate_file"]
-    candidate_names = candidates.read_text(encoding="utf-8").splitlines()
+    source = ROOT / str(config.label_file)
+    by_wnid, candidate_names = _load_imagenet21k_catalog(source)
+    rows = [
+        line.split(",", maxsplit=2)
+        for line in source.read_text(encoding="utf-8").splitlines()
+        if "," in line
+    ]
+    source_wnids = [row[0].strip() for row in rows]
+    source_names = [row[1].strip() for row in rows]
 
-    assert config.expected_labels == protocol["distinct_candidate_names"] == 20_101
-    assert protocol["source_wnids"] == protocol["distinct_wnids"] == 21_843
-    assert protocol["runs"] == DEFAULT_RUNS
-    assert protocol["default_B"] == IMAGENET21K_B_VALUES[0]
-    assert protocol["source_sha256"] == sha256(source)
-    assert protocol["candidate_file_sha256"] == sha256(candidates)
+    assert config.expected_labels == len(candidate_names) == 20_101
+    assert len(source_wnids) == len(set(source_wnids)) == len(by_wnid) == 21_843
     assert len(candidate_names) == len(set(candidate_names)) == 20_101
-    serialized = json.dumps(
-        candidate_names, ensure_ascii=False, separators=(",", ":")
-    ).encode("utf-8")
-    assert protocol["runtime_catalog_sha256"] == hashlib.sha256(serialized).hexdigest()
+    assert candidate_names == list(dict.fromkeys(source_names))
+    assert by_wnid == dict(zip(source_wnids, source_names))
 
 
 def test_runtime_manifest_records_seed_decoding_and_code_revision(tmp_path):

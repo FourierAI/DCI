@@ -19,7 +19,6 @@ class DatasetConfig:
     metadata: str | None = None
     split: str | None = None
     label_file: str | None = None
-    protocol_metadata: str | None = None
     default_max_samples: int | None = None
 
 
@@ -63,7 +62,6 @@ DATASETS: dict[str, DatasetConfig] = {
         expected_images=None,
         expected_labels=20_101,
         label_file="data/metadata/imagenet21k/im21K.txt",
-        protocol_metadata="data/metadata/imagenet21k/first_name_protocol.json",
         default_max_samples=1_000,
     ),
 }

@@ -806,7 +806,7 @@ def main() -> None:
     dataset = load_dataset(repo_root, config, args.metadata, args.image_root)
     if not dataset.image_root.exists():
         raise FileNotFoundError(
-            f"Image root not found: {dataset.image_root}. See data/README.md for setup."
+            f"Image root not found: {dataset.image_root}. See README.md#data-inputs for setup."
         )
 
     client = OpenAI(

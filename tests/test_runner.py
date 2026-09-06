@@ -1,4 +1,3 @@
-import hashlib
 import json
 import random
 from pathlib import Path
@@ -212,14 +211,12 @@ def test_imagenet21k_catalog_has_20101_first_names_and_keeps_all_wnids():
     assert len(labels) == len(set(labels)) == 20_101
     assert by_wnid["n02012849"] == by_wnid["n03126707"] == "crane"
     assert DATASETS["imagenet21k"].expected_labels == len(labels)
-    exported = path.with_name("first_names.txt")
-    protocol = json.loads(path.with_name("first_name_protocol.json").read_text())
-    assert exported.read_text(encoding="utf-8").splitlines() == labels
-    assert protocol["distinct_candidate_names"] == len(labels)
-    assert protocol["source_sha256"] == hashlib.sha256(path.read_bytes()).hexdigest()
-    assert protocol["candidate_file_sha256"] == hashlib.sha256(
-        exported.read_bytes()
-    ).hexdigest()
+    source_names = [
+        line.split(",", maxsplit=2)[1].strip()
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if "," in line
+    ]
+    assert list(dict.fromkeys(source_names)) == labels
 
 
 def test_imagenet21k_catalog_preserves_first_name_spelling_and_order(tmp_path):

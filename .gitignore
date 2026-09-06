@@ -12,3 +12,25 @@ data/metadata/imagenet21k/*index*.json
 *_accu.txt
 crecexp_*/
 crecexp_progress/
+
+# Local-only experiment artifacts and internal documentation.
+.pytest_cache/
+.ruff_cache/
+*.log
+*.xlsx
+*.xls
+data/results/workbooks/
+data/results/qualitative/
+data/results/manifest.json
+data/results/*
+!data/results/README.md
+!data/results/reported_results.json
+data/metadata/imagenet21k/first_names.txt
+data/metadata/imagenet21k/first_name_protocol.json
+docs/EXPERIMENT_PROTOCOL.md
+docs/IMAGENET21K_LABEL_PROTOCOL.md
+docs/PAPER_ALIGNMENT.md
+audit/
+internal/
+tmp/
+backups/
